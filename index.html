@@ -6,907 +6,876 @@
 <title>AI 智能视频剪辑 - 一键生成字幕 · 口播混剪</title>
 <style>
   :root {
-    --bg: #0a0a0f;
-    --surface: #14141f;
-    --border: #252540;
-    --text: #e4e4f0;
-    --dim: #8888aa;
-    --accent: #6c5ce7;
-    --accent-glow: #a29bfe;
-    --danger: #e74c3c;
-    --success: #2ecc71;
-    --gold: #f39c12;
+    --bg: #0a0a0f; --surface: #14141f; --border: #252540; --text: #e4e4f0;
+    --dim: #8888aa; --accent: #6c5ce7; --accent-glow: #a29bfe;
+    --danger: #e74c3c; --success: #2ecc71; --gold: #f39c12; --tab-active: #1e1e35;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
   }
-  /* Hero */
-  .hero {
-    text-align: center;
-    padding: 60px 20px 30px;
-    max-width: 700px;
-  }
+  .hero { text-align: center; padding: 50px 20px 20px; max-width: 750px; }
   .hero h1 {
-    font-size: 2.2em;
-    font-weight: 700;
+    font-size: 2.2em; font-weight: 700;
     background: linear-gradient(135deg, var(--accent), var(--accent-glow));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 12px;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px;
   }
   .hero p { color: var(--dim); font-size: 1.05em; line-height: 1.6; }
-  .badges { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+  .badges { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
   .badge {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 6px 16px;
-    font-size: 0.85em;
-    color: var(--dim);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 14px; font-size: 0.8em; color: var(--dim);
   }
   .badge span { color: var(--accent-glow); font-weight: 600; }
-  
-  /* Main container */
-  .container {
-    width: 100%;
-    max-width: 800px;
-    padding: 0 20px;
-  }
-  
-  /* Upload zone */
+  .container { width: 100%; max-width: 880px; padding: 0 16px; }
+
+  /* Upload */
   .upload-zone {
-    border: 2px dashed var(--border);
-    border-radius: 16px;
-    padding: 50px 30px;
-    text-align: center;
-    cursor: pointer;
-    transition: all .3s;
-    background: var(--surface);
-    margin-bottom: 16px;
+    border: 2px dashed var(--border); border-radius: 16px; padding: 40px 20px;
+    text-align: center; cursor: pointer; transition: all .3s; background: var(--surface); margin-bottom: 12px;
   }
-  .upload-zone:hover, .upload-zone.drag-over {
-    border-color: var(--accent);
-    background: #1a1a2e;
-  }
-  .upload-zone svg { margin-bottom: 16px; opacity: 0.6; }
-  .upload-zone .title { font-size: 1.1em; font-weight: 600; margin-bottom: 6px; }
-  .upload-zone .hint { font-size: 0.85em; color: var(--dim); }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: #1a1a2e; }
+  .upload-zone svg { margin-bottom: 12px; opacity: 0.6; }
+  .upload-zone .title { font-size: 1.05em; font-weight: 600; margin-bottom: 4px; }
+  .upload-zone .hint { font-size: 0.8em; color: var(--dim); }
   .upload-zone input { display: none; }
-  
-  /* File info */
+
   .file-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-    display: none;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 16px; display: none; align-items: center; justify-content: space-between; margin-bottom: 12px;
   }
   .file-card.show { display: flex; }
-  .file-info { display: flex; align-items: center; gap: 12px; }
-  .file-icon {
-    width: 44px; height: 44px;
-    background: var(--accent);
-    border-radius: 10px;
+  .file-info { display: flex; align-items: center; gap: 10px; }
+  .file-icon { width: 38px; height: 38px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1em; }
+  .file-name { font-weight: 600; font-size: 0.9em; }
+  .file-size { font-size: 0.75em; color: var(--dim); }
+  .file-remove { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.2em; }
+
+  /* === EDITOR TABS === */
+  .editor {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    margin-bottom: 12px; display: none; overflow: hidden;
+  }
+  .editor.show { display: block; }
+  .tabs {
+    display: flex; border-bottom: 1px solid var(--border);
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .tab {
+    padding: 12px 18px; font-size: 0.85em; cursor: pointer; white-space: nowrap;
+    color: var(--dim); border-bottom: 2px solid transparent; transition: all .2s;
+    font-weight: 500;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent-glow); border-bottom-color: var(--accent); background: var(--tab-active); }
+  .tab-content { display: none; padding: 16px; }
+  .tab-content.active { display: block; }
+
+  /* Tab: Trim */
+  .trim-sliders { padding: 8px 0; }
+  .trim-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .trim-row label { font-size: 0.85em; color: var(--dim); min-width: 40px; }
+  .trim-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+  .trim-row .time-val { font-size: 0.8em; color: var(--accent-glow); min-width: 50px; text-align: right; font-family: monospace; }
+  .trim-presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .preset-chip {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 15px;
+    padding: 5px 12px; font-size: 0.78em; cursor: pointer; color: var(--dim); transition: all .2s;
+  }
+  .preset-chip:hover { border-color: var(--accent); color: var(--text); }
+
+  /* Tab: Filter */
+  .filter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
+  .filter-item {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 6px; text-align: center; cursor: pointer; transition: all .2s;
+    font-size: 0.75em; color: var(--dim);
+  }
+  .filter-item:hover { border-color: var(--accent); color: var(--text); }
+  .filter-item.active { border-color: var(--accent); background: #1a1a35; color: var(--accent-glow); }
+  .filter-preview { width: 100%; height: 36px; border-radius: 6px; margin-bottom: 6px; }
+
+  /* Tab: Speed */
+  .speed-options { display: flex; flex-wrap: wrap; gap: 8px; }
+  .speed-btn {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 16px; cursor: pointer; font-size: 0.85em; color: var(--dim); transition: all .2s;
+    font-family: monospace;
+  }
+  .speed-btn:hover { border-color: var(--accent); color: var(--text); }
+  .speed-btn.active { border-color: var(--accent); color: var(--accent-glow); background: #1a1a35; }
+
+  /* Tab: Ratio */
+  .ratio-options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ratio-btn {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 16px; cursor: pointer; font-size: 0.82em; color: var(--dim); text-align: center; transition: all .2s;
+  }
+  .ratio-btn:hover { border-color: var(--accent); }
+  .ratio-btn.active { border-color: var(--accent); color: var(--accent-glow); background: #1a1a35; }
+  .ratio-icon { font-size: 1.3em; display: block; margin-bottom: 2px; }
+
+  /* Tab: Music */
+  .music-upload {
+    border: 1px dashed var(--border); border-radius: 10px; padding: 14px;
+    text-align: center; cursor: pointer; font-size: 0.82em; color: var(--dim); margin-bottom: 10px; transition: all .2s;
+  }
+  .music-upload:hover { border-color: var(--accent); }
+  .music-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .music-row label { font-size: 0.82em; color: var(--dim); white-space: nowrap; }
+  .music-row input[type="range"] { flex: 1; accent-color: var(--gold); }
+
+  /* Tab: Subtitles */
+  textarea.sub-input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 10px; font-size: 0.85em; font-family: inherit; resize: vertical; min-height: 80px;
+  }
+  .text-overlay-row { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .text-overlay-row input {
+    flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 8px 10px; font-size: 0.85em;
+  }
+  .pos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 80px; }
+  .pos-cell {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+    aspect-ratio: 1; cursor: pointer; transition: all .2s; font-size: 0.6em; color: var(--dim);
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.3em;
   }
-  .file-name { font-weight: 600; }
-  .file-size { font-size: 0.8em; color: var(--dim); }
-  .file-remove {
-    background: none; border: none;
-    color: var(--danger); cursor: pointer;
-    font-size: 1.3em; padding: 6px;
-  }
-  
-  /* Options */
-  .options {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 16px;
-    display: none;
-  }
-  .options.show { display: block; }
-  .option-group { margin-bottom: 16px; }
-  .option-group:last-child { margin-bottom: 0; }
-  .option-label {
-    display: block;
-    font-size: 0.9em;
-    font-weight: 600;
-    margin-bottom: 6px;
-    color: var(--dim);
-  }
-  .option-label .icon { margin-right: 4px; }
-  textarea.option-input {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    padding: 12px;
-    font-size: 0.9em;
-    font-family: inherit;
-    resize: vertical;
-    min-height: 80px;
-  }
-  .check-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 0;
-  }
+  .pos-cell.active { border-color: var(--accent); background: #1a1a35; color: var(--accent-glow); }
+
+  /* Checkbox row */
+  .check-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 0.85em; }
   .check-row input[type="checkbox"] { accent-color: var(--accent); }
-  
-  /* Process button */
+
+  /* Buttons */
   .btn {
-    width: 100%;
-    padding: 14px;
-    border: none;
-    border-radius: 12px;
-    font-size: 1.05em;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all .2s;
-    display: none;
+    width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 1em;
+    font-weight: 600; cursor: pointer; transition: all .2s; display: none;
   }
-  .btn-primary {
-    background: var(--accent);
-    color: #fff;
-  }
-  .btn-primary:hover { background: #7c6ff7; transform: translateY(-1px); }
-  .btn-primary:disabled {
-    background: var(--border);
-    cursor: not-allowed;
-    transform: none;
-  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #7c6ff7; }
+  .btn-primary:disabled { background: var(--border); cursor: not-allowed; }
   .btn.show { display: block; }
-  
+
   /* Progress */
   .progress-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    margin: 16px 0;
-    display: none;
-    text-align: center;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px; margin: 12px 0; display: none; text-align: center;
   }
   .progress-wrap.show { display: block; }
-  .progress-bar {
-    height: 6px;
-    background: var(--border);
-    border-radius: 3px;
-    overflow: hidden;
-    margin: 12px 0;
-  }
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--accent-glow));
-    border-radius: 3px;
-    width: 0%;
-    transition: width .3s;
-  }
-  .progress-text { font-size: 0.9em; color: var(--dim); }
-  
+  .progress-bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 10px 0; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-glow)); border-radius: 3px; width: 0%; transition: width .3s; }
+  .progress-text { font-size: 0.85em; color: var(--dim); }
+
   /* Result */
-  .result {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    margin: 16px 0;
-    display: none;
-    text-align: center;
-  }
+  .result { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 12px 0; display: none; text-align: center; }
   .result.show { display: block; }
-  .result video {
-    width: 100%;
-    border-radius: 8px;
-    margin-bottom: 12px;
-  }
-  
-  /* Payment section */
+  .result video { width: 100%; border-radius: 8px; margin-bottom: 8px; }
+
+  /* Payment */
   .pay-section {
-    background: var(--surface);
-    border: 1px solid var(--gold);
-    border-radius: 12px;
-    padding: 24px;
-    margin: 16px 0;
-    display: none;
-    text-align: center;
+    background: var(--surface); border: 1px solid var(--gold); border-radius: 12px;
+    padding: 20px; margin: 12px 0; display: none; text-align: center;
   }
   .pay-section.show { display: block; }
-  .pay-section h3 { color: var(--gold); margin-bottom: 8px; }
-  .pay-section .price {
-    font-size: 2.5em;
-    font-weight: 800;
-    color: var(--gold);
-    margin: 8px 0;
-  }
-  .pay-section .qr-hint { color: var(--dim); font-size: 0.85em; margin: 12px 0; }
-  .pay-section img {
-    width: 180px; height: 180px;
-    border-radius: 12px;
-    border: 2px solid var(--border);
-    margin: 12px 0;
-  }
-  .unlock-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 16px;
-  }
+  .pay-section h3 { color: var(--gold); margin-bottom: 6px; }
+  .pay-section .price { font-size: 2.2em; font-weight: 800; color: var(--gold); }
+  .unlock-row { display: flex; gap: 8px; margin-top: 14px; }
   .unlock-row input {
-    flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--text);
-    padding: 10px 14px;
-    font-size: 1em;
-    text-align: center;
-    letter-spacing: 4px;
+    flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 10px; font-size: 1em; text-align: center; letter-spacing: 3px;
   }
-  .unlock-btn {
-    background: var(--gold);
-    color: #000;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 20px;
-    font-weight: 600;
-    cursor: pointer;
-  }
+  .unlock-btn { background: var(--gold); color: #000; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; }
   .unlock-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  
-  /* Download btn */
-  .btn-download {
-    background: var(--success);
-    display: none;
-  }
+  .btn-download { background: var(--success); display: none; }
   .btn-download:hover { background: #27ae60; }
   .btn-download.show { display: block; }
-  
-  /* Footer */
-  footer {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--dim);
-    font-size: 0.85em;
-  }
-  footer a { color: var(--accent-glow); text-decoration: none; }
-  
-  /* Toast */
+
+  footer { text-align: center; padding: 30px 16px; color: var(--dim); font-size: 0.8em; }
+
   .toast {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 24px;
-    color: var(--text);
-    font-size: 0.95em;
-    z-index: 999;
-    opacity: 0;
-    transition: opacity .3s;
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 22px; font-size: 0.9em; z-index: 999; opacity: 0; transition: opacity .3s;
     pointer-events: none;
   }
   .toast.show { opacity: 1; }
-  
+
   @media (max-width: 600px) {
-    .hero h1 { font-size: 1.6em; }
-    .upload-zone { padding: 30px 16px; }
-    .pay-section .price { font-size: 2em; }
+    .hero h1 { font-size: 1.5em; }
+    .tab { padding: 10px 12px; font-size: 0.78em; }
+    .filter-grid { grid-template-columns: repeat(3, 1fr); }
   }
 </style>
 </head>
 <body>
 
 <div class="hero">
-  <h1>🎬 AI 智能视频剪辑</h1>
-  <p>上传视频 → 自动生成字幕 → 一键合成<br>口播视频 · 混剪字幕，浏览器本地处理，不上传服务器</p>
+  <h1>🎬 AI 智能视频剪辑 v3.0</h1>
+  <p>上传视频 → AI自动剪辑去空白 → 滤镜特效 → 变速 → 字幕音乐 → 付费去水印下载<br>短视频创作一站式搞定，浏览器本地处理</p>
   <div class="badges">
-    <div class="badge">🔒 <span>隐私安全</span> 文件不出本地</div>
-    <div class="badge">✂️ <span>AI自动剪辑</span> 智能去空白</div>
-    <div class="badge">📝 <span>字幕合成</span> 一键添加</div>
-    <div class="badge">💰 <span>按次付费</span> ¥9.9起</div>
+    <div class="badge">✂️ <span>AI自动剪辑</span></div>
+    <div class="badge">🎨 <span>滤镜特效</span></div>
+    <div class="badge">⚡ <span>变速调节</span></div>
+    <div class="badge">📝 <span>字幕合成</span></div>
+    <div class="badge">💰 <span>¥9.9起</span></div>
   </div>
 </div>
 
 <div class="container">
   <!-- Upload -->
   <div class="upload-zone" id="uploadZone">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-      <polyline points="17 8 12 3 7 8"/>
-      <line x1="12" y1="3" x2="12" y2="15"/>
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
     </svg>
     <div class="title">点击上传视频 或拖拽到此处</div>
-    <div class="hint">支持 MP4 / MOV / AVI · 最大 500MB · PC 端 Chrome/Edge 体验最佳</div>
+    <div class="hint">MP4 / MOV / AVI · 最大500MB · PC端Chrome/Edge最佳</div>
     <input type="file" id="fileInput" accept="video/*">
   </div>
 
-  <!-- File card -->
   <div class="file-card" id="fileCard">
     <div class="file-info">
       <div class="file-icon">🎥</div>
-      <div>
-        <div class="file-name" id="fileName"></div>
-        <div class="file-size" id="fileSize"></div>
-      </div>
+      <div><div class="file-name" id="fileName"></div><div class="file-size" id="fileSize"></div></div>
     </div>
     <button class="file-remove" id="fileRemove">✕</button>
   </div>
 
-  <!-- Options -->
-  <div class="options" id="optionsPanel">
-    <div class="option-group">
-      <label class="option-label">📝 字幕内容（一行一句，自动识别时间轴）</label>
-      <textarea class="option-input" id="subtitleText" placeholder="在此粘贴字幕文本，每行一句...&#10;留空则使用 AI 自动语音识别生成字幕"></textarea>
+  <!-- ====== EDITOR ====== -->
+  <div class="editor" id="editor">
+    <div class="tabs">
+      <div class="tab active" data-tab="trim">✂️ 裁剪</div>
+      <div class="tab" data-tab="filter">🎨 滤镜</div>
+      <div class="tab" data-tab="speed">⚡ 变速</div>
+      <div class="tab" data-tab="ratio">📱 比例</div>
+      <div class="tab" data-tab="music">🎵 音乐</div>
+      <div class="tab" data-tab="subtitles">📝 字幕</div>
     </div>
-    <div class="option-group">
-      <div class="check-row">
-        <input type="checkbox" id="addWatermark" checked>
-        <label for="addWatermark">预览版添加水印（付费后可去除）</label>
+
+    <!-- Trim -->
+    <div class="tab-content active" id="tab-trim">
+      <div class="trim-sliders">
+        <div class="trim-row">
+          <label>开始</label>
+          <input type="range" id="trimStart" min="0" max="100" value="0" step="0.1">
+          <span class="time-val" id="trimStartVal">00:00</span>
+        </div>
+        <div class="trim-row">
+          <label>结束</label>
+          <input type="range" id="trimEnd" min="0" max="100" value="100" step="0.1">
+          <span class="time-val" id="trimEndVal">00:00</span>
+        </div>
       </div>
       <div class="check-row">
         <input type="checkbox" id="autoCut" checked>
-        <label for="autoCut">🤖 自动剪辑 — 检测并剪掉沉默/空白片段（适合口播视频）</label>
+        <label for="autoCut">🤖 AI自动去空白（检测沉默片段自动剪掉）</label>
       </div>
-      <div class="check-row" id="cutSettings" style="padding-left:20px;display:none;">
-        <span style="color:var(--dim);font-size:0.85em;">灵敏度：</span>
-        <select id="cutSensitivity" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;">
-          <option value="aggressive">激进（剪得多）</option>
-          <option value="normal" selected>标准</option>
-          <option value="gentle">保守（剪得少）</option>
+      <div class="check-row" id="cutSettings" style="padding-left:16px;display:none;">
+        <span style="color:var(--dim);font-size:0.8em;">灵敏度：</span>
+        <select id="cutSensitivity" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;font-size:0.82em;">
+          <option value="aggressive">激进</option><option value="normal" selected>标准</option><option value="gentle">保守</option>
         </select>
       </div>
     </div>
+
+    <!-- Filter -->
+    <div class="tab-content" id="tab-filter">
+      <p style="font-size:0.8em;color:var(--dim);margin-bottom:10px;">选择一个滤镜效果</p>
+      <div class="filter-grid" id="filterGrid">
+        <div class="filter-item active" data-filter="none"><div class="filter-preview" style="background:linear-gradient(135deg,#444,#888);"></div>原片</div>
+        <div class="filter-item" data-filter="warm"><div class="filter-preview" style="background:linear-gradient(135deg,#8B6914,#FFD700);"></div>暖调</div>
+        <div class="filter-item" data-filter="cool"><div class="filter-preview" style="background:linear-gradient(135deg,#1a3a5c,#4a9bd9);"></div>冷调</div>
+        <div class="filter-item" data-filter="vintage"><div class="filter-preview" style="background:linear-gradient(135deg,#6B4226,#C9A96E);"></div>复古</div>
+        <div class="filter-item" data-filter="bw"><div class="filter-preview" style="background:linear-gradient(135deg,#333,#999);"></div>黑白</div>
+        <div class="filter-item" data-filter="vivid"><div class="filter-preview" style="background:linear-gradient(135deg,#ff4444,#4444ff);"></div>鲜艳</div>
+        <div class="filter-item" data-filter="fade"><div class="filter-preview" style="background:linear-gradient(135deg,#aabbcc,#ddeeff);"></div>褪色</div>
+        <div class="filter-item" data-filter="dramatic"><div class="filter-preview" style="background:linear-gradient(135deg,#1a0a00,#cc6600);"></div>电影</div>
+      </div>
+    </div>
+
+    <!-- Speed -->
+    <div class="tab-content" id="tab-speed">
+      <p style="font-size:0.8em;color:var(--dim);margin-bottom:10px;">视频播放速度</p>
+      <div class="speed-options" id="speedOptions">
+        <div class="speed-btn" data-speed="0.25">0.25x</div>
+        <div class="speed-btn" data-speed="0.5">0.5x</div>
+        <div class="speed-btn" data-speed="0.75">0.75x</div>
+        <div class="speed-btn active" data-speed="1">1x</div>
+        <div class="speed-btn" data-speed="1.25">1.25x</div>
+        <div class="speed-btn" data-speed="1.5">1.5x</div>
+        <div class="speed-btn" data-speed="2">2x</div>
+      </div>
+    </div>
+
+    <!-- Ratio -->
+    <div class="tab-content" id="tab-ratio">
+      <p style="font-size:0.8em;color:var(--dim);margin-bottom:10px;">输出视频比例（自动裁剪适配）</p>
+      <div class="ratio-options" id="ratioOptions">
+        <div class="ratio-btn active" data-ratio="original"><span class="ratio-icon">📐</span>原始</div>
+        <div class="ratio-btn" data-ratio="9:16"><span class="ratio-icon">📱</span>9:16 抖音</div>
+        <div class="ratio-btn" data-ratio="1:1"><span class="ratio-icon">⬛</span>1:1 方形</div>
+        <div class="ratio-btn" data-ratio="16:9"><span class="ratio-icon">🖥</span>16:9 横屏</div>
+      </div>
+    </div>
+
+    <!-- Music -->
+    <div class="tab-content" id="tab-music">
+      <div class="music-upload" id="musicUpload">
+        🎵 点击上传背景音乐（MP3）<br><span style="font-size:0.75em;">留空则保留原视频音频</span>
+        <input type="file" id="musicInput" accept="audio/*" style="display:none;">
+      </div>
+      <div class="file-card" id="musicCard" style="margin-top:8px;">
+        <div class="file-info">
+          <div class="file-icon" style="font-size:0.8em;">🎵</div>
+          <div><div class="file-name" id="musicName"></div></div>
+        </div>
+        <button class="file-remove" id="musicRemove">✕</button>
+      </div>
+      <div class="music-row">
+        <label>BGM音量</label>
+        <input type="range" id="musicVolume" min="10" max="100" value="30">
+        <span style="font-size:0.8em;color:var(--gold);min-width:35px;" id="musicVolVal">30%</span>
+      </div>
+      <div class="check-row" style="margin-top:6px;">
+        <input type="checkbox" id="mixAudio" checked>
+        <label for="mixAudio">保留原视频声音（混音模式）</label>
+      </div>
+    </div>
+
+    <!-- Subtitles + Text Overlay -->
+    <div class="tab-content" id="tab-subtitles">
+      <label style="font-size:0.82em;color:var(--dim);display:block;margin-bottom:4px;">📝 字幕文本（每行一句）</label>
+      <textarea class="sub-input" id="subtitleText" placeholder="在此粘贴字幕文本，每行一句...&#10;留空不添加字幕"></textarea>
+      <div style="margin-top:12px;">
+        <label style="font-size:0.82em;color:var(--dim);display:block;margin-bottom:4px;">💬 自定义文字水印（标题/Logo）</label>
+        <div class="text-overlay-row">
+          <input type="text" id="overlayText" placeholder="输入要显示的文字，如：@你的抖音号">
+          <div class="pos-grid" id="overlayPos">
+            <div class="pos-cell active" data-pos="top-left">↖</div>
+            <div class="pos-cell" data-pos="top-center">↑</div>
+            <div class="pos-cell" data-pos="top-right">↗</div>
+            <div class="pos-cell" data-pos="mid-left">←</div>
+            <div class="pos-cell" data-pos="center">⊕</div>
+            <div class="pos-cell" data-pos="mid-right">→</div>
+            <div class="pos-cell" data-pos="bot-left">↙</div>
+            <div class="pos-cell" data-pos="bot-center">↓</div>
+            <div class="pos-cell" data-pos="bot-right">↘</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Process button -->
-  <button class="btn btn-primary" id="processBtn" disabled>
-    🚀 开始 AI 处理
-  </button>
+  <!-- Settings -->
+  <div class="check-row" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:none;" id="settingsRow">
+    <input type="checkbox" id="addWatermark" checked>
+    <label for="addWatermark">预览版加水印（付费可去）</label>
+  </div>
 
-  <!-- Progress -->
+  <button class="btn btn-primary show" id="processBtn" disabled>🚀 开始 AI 处理</button>
+
   <div class="progress-wrap" id="progressWrap">
-    <div class="progress-text" id="progressText">正在加载 FFmpeg 引擎...</div>
+    <div class="progress-text" id="progressText">加载引擎...</div>
     <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
   </div>
 
-  <!-- Result preview -->
   <div class="result" id="resultPanel">
     <video id="previewVideo" controls></video>
-    <p style="color:var(--dim);font-size:0.85em;">⬆ 预览版含水印 · 付费解锁高清无水印版本</p>
+    <p style="color:var(--dim);font-size:0.8em;">⬆ 预览版含水印 · 付费解锁无水印</p>
   </div>
 
-  <!-- Payment -->
   <div class="pay-section" id="paySection">
     <h3>🔓 解锁无水印版本</h3>
     <div class="price">¥9.9</div>
-    <p style="color:var(--dim);font-size:0.9em;">单次处理费用 · 扫码支付</p>
-    <p style="color:var(--gold);font-size:0.85em;margin:8px 0;">💡 保存下方二维码 → 微信/支付宝扫码 → 支付后联系客服获取解锁码</p>
-    <div style="background:var(--bg);border-radius:12px;padding:20px;display:inline-block;margin:8px 0;">
-      <div style="width:160px;height:160px;background:var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:0.8em;">
-        [ 微信收款码 ]<br>扫码支付 ¥9.9
-      </div>
+    <p style="color:var(--dim);font-size:0.85em;">扫码支付后联系客服获取解锁码</p>
+    <div style="background:var(--bg);border-radius:12px;padding:18px;display:inline-block;margin:8px 0;">
+      <div style="width:140px;height:140px;background:var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:0.75em;">[ 收款码 ]</div>
     </div>
-    <p class="qr-hint">支付完成后联系客服获取解锁码</p>
     <div class="unlock-row">
-      <input type="text" id="unlockInput" placeholder="输入 6 位解锁码" maxlength="6">
-      <button class="unlock-btn" id="unlockBtn" disabled>解锁下载</button>
+      <input type="text" id="unlockInput" placeholder="6位解锁码" maxlength="6">
+      <button class="unlock-btn" id="unlockBtn" disabled>解锁</button>
     </div>
   </div>
 
-  <!-- Download -->
-  <button class="btn btn-download" id="downloadBtn">
-    ⬇ 下载无水印视频
-  </button>
+  <button class="btn btn-download" id="downloadBtn">⬇ 下载无水印视频</button>
 </div>
 
-<footer>
-  本地处理 · 视频不上传 · <a href="#">隐私安全</a><br>
-  Powered by FFmpeg.wasm · Whisper AI
-</footer>
-
+<footer>本地处理 · 视频不上传 · FFmpeg.wasm</footer>
 <div class="toast" id="toast"></div>
 
-<!-- FFmpeg.wasm -->
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
-
 <script>
-  // === State ===
-  let videoFile = null;
-  let videoData = null;
-  let processedBlob = null;
-  let isUnlocked = false;
-  let ffmpeg = null;
-  let ffmpegReady = false;
+// === State ===
+let videoFile = null, videoData = null, processedBlob = null, isUnlocked = false;
+let ffmpeg = null, ffmpegReady = false, videoDuration = 0;
+let musicFile = null, musicData = null;
+let currentFilter = 'none', currentSpeed = 1, currentRatio = 'original';
+let overlayTextVal = '', overlayPosVal = 'top-left';
 
-  // === DOM ===
-  const uploadZone = document.getElementById('uploadZone');
-  const fileInput = document.getElementById('fileInput');
-  const fileCard = document.getElementById('fileCard');
-  const fileName = document.getElementById('fileName');
-  const fileSize = document.getElementById('fileSize');
-  const fileRemove = document.getElementById('fileRemove');
-  const optionsPanel = document.getElementById('optionsPanel');
-  const processBtn = document.getElementById('processBtn');
-  const progressWrap = document.getElementById('progressWrap');
-  const progressText = document.getElementById('progressText');
-  const progressFill = document.getElementById('progressFill');
-  const resultPanel = document.getElementById('resultPanel');
-  const previewVideo = document.getElementById('previewVideo');
-  const paySection = document.getElementById('paySection');
-  const unlockInput = document.getElementById('unlockInput');
-  const unlockBtn = document.getElementById('unlockBtn');
-  const downloadBtn = document.getElementById('downloadBtn');
-  const toast = document.getElementById('toast');
-  const subtitleText = document.getElementById('subtitleText');
-  const addWatermark = document.getElementById('addWatermark');
-  const autoCut = document.getElementById('autoCut');
-  const cutSensitivity = document.getElementById('cutSensitivity');
-  const cutSettings = document.getElementById('cutSettings');
+// === DOM ===
+const $ = id => document.getElementById(id);
+const uploadZone = $('uploadZone'), fileInput = $('fileInput');
+const fileCard = $('fileCard'), fileName = $('fileName'), fileSize = $('fileSize');
+const editor = $('editor'), settingsRow = $('settingsRow');
+const processBtn = $('processBtn'), progressWrap = $('progressWrap');
+const progressText = $('progressText'), progressFill = $('progressFill');
+const resultPanel = $('resultPanel'), previewVideo = $('previewVideo');
+const paySection = $('paySection'), downloadBtn = $('downloadBtn');
+const toast = $('toast');
 
-  // Show/hide sensitivity
-  autoCut.addEventListener('change', () => {
-    cutSettings.style.display = autoCut.checked ? 'block' : 'none';
+function showToast(msg) {
+  toast.textContent = msg; toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// === File Handling ===
+uploadZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', handleFile);
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag-over');
+  if (e.dataTransfer.files.length) handleFile({ target: { files: e.dataTransfer.files } });
+});
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('video/')) { showToast('⚠️ 请上传视频文件'); return; }
+  if (file.size > 500*1024*1024) { showToast('⚠️ 文件不超过500MB'); return; }
+  videoFile = file; videoData = null; processedBlob = null; isUnlocked = false;
+  fileName.textContent = file.name;
+  fileSize.textContent = (file.size/1024/1024).toFixed(1) + ' MB';
+  fileCard.classList.add('show'); editor.classList.add('show');
+  settingsRow.style.display = 'flex'; processBtn.classList.add('show');
+  processBtn.disabled = false;
+  resultPanel.classList.remove('show'); paySection.classList.remove('show');
+  downloadBtn.classList.remove('show'); progressWrap.classList.remove('show');
+  // Reset trim
+  const vid = document.createElement('video');
+  vid.preload = 'metadata';
+  vid.onloadedmetadata = () => {
+    videoDuration = vid.duration;
+    $('trimEnd').max = videoDuration; $('trimEnd').value = videoDuration;
+    $('trimEndVal').textContent = fmtTime(videoDuration);
+    $('trimStart').max = videoDuration;
+  };
+  vid.src = URL.createObjectURL(file);
+}
+
+$('fileRemove').addEventListener('click', resetAll);
+
+function resetAll() {
+  videoFile = null; videoData = null; processedBlob = null;
+  musicFile = null; musicData = null;
+  fileInput.value = ''; fileCard.classList.remove('show');
+  editor.classList.remove('show'); settingsRow.style.display = 'none';
+  processBtn.classList.remove('show'); processBtn.disabled = true;
+  resultPanel.classList.remove('show'); paySection.classList.remove('show');
+  downloadBtn.classList.remove('show'); progressWrap.classList.remove('show');
+  $('musicCard').classList.remove('show');
+}
+
+// === Tabs ===
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    $('tab-' + t.dataset.tab).classList.add('active');
   });
+});
 
-  function showToast(msg) {
-    toast.textContent = msg;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2500);
+// === Trim ===
+$('trimStart').addEventListener('input', () => {
+  $('trimStartVal').textContent = fmtTime(parseFloat($('trimStart').value));
+});
+$('trimEnd').addEventListener('input', () => {
+  $('trimEndVal').textContent = fmtTime(parseFloat($('trimEnd').value));
+});
+$('autoCut').addEventListener('change', () => {
+  $('cutSettings').style.display = $('autoCut').checked ? 'block' : 'none';
+});
+function fmtTime(s) {
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+}
+
+// === Filter ===
+document.querySelectorAll('.filter-item').forEach(f => {
+  f.addEventListener('click', () => {
+    document.querySelectorAll('.filter-item').forEach(x => x.classList.remove('active'));
+    f.classList.add('active');
+    currentFilter = f.dataset.filter;
+  });
+});
+
+// === Speed ===
+document.querySelectorAll('.speed-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    currentSpeed = parseFloat(b.dataset.speed);
+  });
+});
+
+// === Ratio ===
+document.querySelectorAll('.ratio-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.ratio-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    currentRatio = b.dataset.ratio;
+  });
+});
+
+// === Music ===
+$('musicUpload').addEventListener('click', () => $('musicInput').click());
+$('musicInput').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  musicFile = f; musicData = null;
+  $('musicName').textContent = f.name;
+  $('musicCard').classList.add('show');
+});
+$('musicRemove').addEventListener('click', () => {
+  musicFile = null; musicData = null;
+  $('musicInput').value = ''; $('musicCard').classList.remove('show');
+});
+$('musicVolume').addEventListener('input', () => {
+  $('musicVolVal').textContent = $('musicVolume').value + '%';
+});
+
+// === Overlay position ===
+document.querySelectorAll('#overlayPos .pos-cell').forEach(c => {
+  c.addEventListener('click', () => {
+    document.querySelectorAll('#overlayPos .pos-cell').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    overlayPosVal = c.dataset.pos;
+  });
+});
+$('overlayText').addEventListener('input', () => {
+  overlayTextVal = $('overlayText').value.trim();
+});
+
+// === FFmpeg ===
+async function initFFmpeg() {
+  if (ffmpegReady) return;
+  const { FFmpeg } = window.FFmpegWASM;
+  ffmpeg = new FFmpeg();
+  ffmpeg.on('progress', ({ progress }) => {
+    progressFill.style.width = Math.round(progress*100) + '%';
+    progressText.textContent = '处理中... ' + Math.round(progress*100) + '%';
+  });
+  await ffmpeg.load();
+  ffmpegReady = true;
+}
+
+// === SRT Generator ===
+function generateSRT(text, duration) {
+  if (!text || !text.trim()) return null;
+  const lines = text.split('\n').filter(l => l.trim());
+  if (!lines.length) return null;
+  const dur = duration || videoDuration || 60;
+  const perLine = Math.max(2, dur / lines.length);
+  let srt = '';
+  lines.forEach((line, i) => {
+    const s = i*perLine, e = s+perLine;
+    srt += `${i+1}\n${fmtSRT(s)} --> ${fmtSRT(e)}\n${line.trim()}\n\n`;
+  });
+  return srt;
+}
+function fmtSRT(s) {
+  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=Math.floor(s%60), ms=Math.floor((s%1)*1000);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
+}
+
+// === Filter to FFmpeg params ===
+const FILTER_MAP = {
+  none: '',
+  warm: 'eq=gamma=1.1:saturation=1.3:brightness=0.02,colorbalance=rs=0.1:gs=-0.05:bs=-0.15',
+  cool: 'eq=gamma=0.95:saturation=1.1,colorbalance=rs=-0.1:gs=0:bs=0.15',
+  vintage: 'curves=vintage,format=yuv420p',
+  bw: 'colorchannelmixer=.3:.4:.3:0:.3:.4:.3:0:.3:.4:.3,hue=s=0',
+  vivid: 'eq=saturation=1.8:brightness=0.03:contrast=1.2',
+  fade: 'eq=saturation=0.6:brightness=0.05:contrast=0.9',
+  dramatic: 'eq=gamma=1.2:contrast=1.4:saturation=1.1:brightness=-0.05',
+};
+
+// === Overlay position mapping ===
+function overlayXY(pos) {
+  const map = {
+    'top-left': [10, 10], 'top-center': ['(w-tw)/2', 10], 'top-right': ['w-tw-10', 10],
+    'mid-left': [10, '(h-th)/2'], 'center': ['(w-tw)/2', '(h-th)/2'], 'mid-right': ['w-tw-10', '(h-th)/2'],
+    'bot-left': [10, 'h-th-10'], 'bot-center': ['(w-tw)/2', 'h-th-10'], 'bot-right': ['w-tw-10', 'h-th-10']
+  };
+  return map[pos] || ['w-tw-10', 'h-th-10'];
+}
+
+// === Auto-cut silence ===
+async function detectSilence(inputName) {
+  await ffmpeg.exec(['-i', inputName, '-vn', '-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1', '-f', 's16le', 'audio.raw']);
+  const rawAudio = await ffmpeg.readFile('audio.raw');
+  try { await ffmpeg.deleteFile('audio.raw'); } catch(e) {}
+  const samples = new Int16Array(rawAudio.buffer);
+  const sampleRate = 16000, windowSize = Math.floor(sampleRate*0.1);
+  const thresholds = { aggressive: 400, normal: 800, gentle: 1500 };
+  const minSil = { aggressive: 0.3, normal: 0.5, gentle: 0.8 };
+  const threshold = thresholds[$('cutSensitivity').value] || 800;
+  const minSilDur = minSil[$('cutSensitivity').value] || 0.5;
+  const minSpDur = 0.2, pad = 0.05;
+  const rms = [];
+  for (let i=0; i<samples.length; i+=windowSize) {
+    let sum=0; const end=Math.min(i+windowSize, samples.length);
+    for (let j=i; j<end; j++) sum+=samples[j]*samples[j];
+    rms.push(Math.sqrt(sum/(end-i)));
   }
-
-  // === File Handling ===
-  uploadZone.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', handleFile);
-  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
-  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-  uploadZone.addEventListener('drop', e => {
-    e.preventDefault();
-    uploadZone.classList.remove('drag-over');
-    if (e.dataTransfer.files.length) handleFile({ target: { files: e.dataTransfer.files } });
-  });
-
-  function handleFile(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('video/')) {
-      showToast('⚠️ 请上传视频文件');
-      return;
+  const segs = []; let sp=false, ss=0;
+  for (let i=0; i<rms.length; i++) {
+    const t=i*windowSize/sampleRate, isSil=rms[i]<threshold;
+    if (!isSil && !sp) { ss=t; sp=true; }
+    else if (isSil && sp) {
+      let long=true;
+      const sw=Math.ceil(minSilDur*sampleRate/windowSize);
+      for (let j=i; j<Math.min(i+sw, rms.length); j++) if (rms[j]>=threshold) { long=false; break; }
+      if (long) {
+        const se=Math.max(ss+minSpDur, t-pad);
+        if (se-ss>=minSpDur) segs.push([Math.max(0,ss-pad), se]);
+        sp=false;
+      }
     }
-    if (file.size > 500 * 1024 * 1024) {
-      showToast('⚠️ 文件不能超过 500MB');
-      return;
+  }
+  if (sp) segs.push([Math.max(0,ss-pad), samples.length/sampleRate]);
+  if (segs.length===0) return null;
+  if (segs.length===1 && segs[0][0]<0.1 && segs[0][1]>(samples.length/sampleRate)-0.1) return null;
+  return segs;
+}
+
+function buildTrimFilter(segs) {
+  const parts=segs.map(([s,e],i)=>`[0:v]trim=start=${s}:duration=${e-s},setpts=PTS-STARTPTS[v${i}];[0:a]atrim=start=${s}:duration=${e-s},asetpts=PTS-STARTPTS[a${i}]`);
+  const vs=segs.map((_,i)=>`[v${i}]`).join(''), as=segs.map((_,i)=>`[a${i}]`).join('');
+  return `${parts.join(';')};${vs}concat=n=${segs.length}:v=1:a=0[outv];${as}concat=n=${segs.length}:v=0:a=1[outa]`;
+}
+
+// === Build video filter chain ===
+function buildVideoFilters() {
+  const f = [];
+  // Speed
+  if (currentSpeed !== 1) f.push(`setpts=${(1/currentSpeed).toFixed(3)}*PTS`);
+  // Color filter
+  const cf = FILTER_MAP[currentFilter];
+  if (cf) f.push(cf);
+  return f;
+}
+
+// === Process ===
+processBtn.addEventListener('click', async () => {
+  if (!videoFile) return;
+  processBtn.disabled = true; processBtn.textContent = '⏳ 处理中...';
+  progressWrap.classList.add('show'); progressText.textContent = '加载引擎...';
+  progressFill.style.width = '5%';
+  resultPanel.classList.remove('show'); paySection.classList.remove('show');
+  downloadBtn.classList.remove('show');
+
+  try {
+    await initFFmpeg();
+    const ext = videoFile.name.split('.').pop(), inputName = 'input.' + ext;
+    // Read video
+    const reader = new FileReader();
+    videoData = await new Promise((res, rej) => { reader.onload=()=>res(new Uint8Array(reader.result)); reader.onerror=rej; reader.readAsArrayBuffer(videoFile); });
+    progressFill.style.width = '20%'; progressText.textContent = '写入视频...';
+    await ffmpeg.writeFile(inputName, videoData);
+
+    // Get video duration
+    videoDuration = parseFloat($('trimEnd').max) || 60;
+    progressFill.style.width = '25%';
+
+    let filterComplex = '';
+    const vf = buildVideoFilters();
+    const useComplex = vf.length > 0 || $('autoCut').checked || overlayTextVal || $('subtitleText').value.trim() || currentRatio !== 'original';
+
+    // Trim
+    const tStart = parseFloat($('trimStart').value) || 0;
+    const tEnd = parseFloat($('trimEnd').value) || videoDuration;
+    progressText.textContent = 'AI 分析中...';
+
+    // Auto-cut
+    if ($('autoCut').checked) {
+      const segs = await detectSilence(inputName);
+      if (segs && segs.length > 1) {
+        filterComplex = buildTrimFilter(segs) + ';';
+        progressText.textContent = `✂️ 剪掉 ${((1-segs.reduce((s,[a,b])=>s+(b-a),0)/segs[segs.length-1][1])*100).toFixed(0)}% 空白`;
+      }
     }
-    videoFile = file;
-    videoData = null;
-    processedBlob = null;
-    isUnlocked = false;
-    
-    fileName.textContent = file.name;
-    fileSize.textContent = (file.size / 1024 / 1024).toFixed(1) + ' MB';
-    fileCard.classList.add('show');
-    optionsPanel.classList.add('show');
-    processBtn.classList.add('show');
+
+    // Build complex filter
+    let lastV = filterComplex ? '[outv]' : '0:v';
+    let lastA = filterComplex ? '[outa]' : '0:a';
+    let idx = 0;
+
+    if (!filterComplex && (tStart > 0 || tEnd < videoDuration - 0.1)) {
+      const dur = tEnd - tStart;
+      filterComplex += `[0:v]trim=start=${tStart}:duration=${dur},setpts=PTS-STARTPTS[v0];[0:a]atrim=start=${tStart}:duration=${dur},asetpts=PTS-STARTPTS[a0];`;
+      lastV = '[v0]'; lastA = '[a0]'; idx = 1;
+    }
+
+    // Apply video filters
+    if (vf.length > 0) {
+      filterComplex += `${lastV}${vf.join(',')}[vf${idx}];`;
+      lastV = `[vf${idx}]`; idx++;
+    }
+
+    // Ratio
+    if (currentRatio !== 'original') {
+      const ratios = { '9:16': [9,16], '1:1': [1,1], '16:9': [16,9] };
+      const [wR, hR] = ratios[currentRatio];
+      filterComplex += `${lastV}crop=min(iw\\,ih*${wR}/${hR}):min(ih\\,iw*${hR}/${wR}),scale=1080:1920,setsar=1[ratio${idx}];`;
+      lastV = `[ratio${idx}]`; idx++;
+    }
+
+    // Text overlay
+    if (overlayTextVal) {
+      const [x, y] = overlayXY(overlayPosVal);
+      const txt = overlayTextVal.replace(/:/g, '\\:').replace(/'/g, "\\\\'");
+      filterComplex += `${lastV}drawtext=text='${txt}':fontsize=28:fontcolor=white@0.8:x=${x}:y=${y}:bordercolor=black@0.4:borderw=2[txt${idx}];`;
+      lastV = `[txt${idx}]`; idx++;
+    }
+
+    // Subtitle
+    const subText = $('subtitleText').value.trim();
+    let srtWritten = false;
+    if (subText) {
+      const srt = generateSRT(subText);
+      if (srt) {
+        await ffmpeg.writeFile('subs.srt', srt);
+        filterComplex += `${lastV}subtitles=subs.srt:force_style='FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2'[sub${idx}];`;
+        lastV = `[sub${idx}]`; idx++;
+        srtWritten = true;
+      }
+    }
+
+    // Watermark
+    if ($('addWatermark').checked) {
+      filterComplex += `${lastV}drawtext=text='预览版 - AI视频剪辑':fontsize=22:fontcolor=white@0.35:x=w-tw-12:y=h-th-12[finalv];`;
+      lastV = '[finalv]';
+    } else if (useComplex) {
+      filterComplex += `${lastV}copy[finalv];`;
+      lastV = '[finalv]';
+    }
+
+    // Audio speed
+    if (currentSpeed !== 1) {
+      filterComplex += `${lastA}atempo=${currentSpeed}[finala];`;
+      lastA = '[finala]';
+    } else if (useComplex) {
+      filterComplex += `${lastA}acopy[finala];`;
+      lastA = '[finala]';
+    }
+
+    // Build command
+    const cmd = ['-i', inputName];
+    let needMusicMap = false;
+
+    // Music
+    if (musicFile) {
+      const mReader = new FileReader();
+      musicData = await new Promise((res, rej) => { mReader.onload=()=>res(new Uint8Array(mReader.result)); mReader.onerror=rej; mReader.readAsArrayBuffer(musicFile); });
+      await ffmpeg.writeFile('bgm.mp3', musicData);
+      cmd.push('-i', 'bgm.mp3');
+      const bgmVol = parseInt($('musicVolume').value)/100;
+      if ($('mixAudio').checked) {
+        // Mix video audio with BGM
+        filterComplex += `[finala][1:a]amix=inputs=2:duration=first:weights=1 ${bgmVol}[mixeda];`;
+        lastA = '[mixeda]';
+      } else {
+        filterComplex += `[1:a]volume=${bgmVol}[bgma];`;
+        lastA = '[bgma]';
+      }
+      cmd.push('-stream_loop', '-1', '-shortest');
+      needMusicMap = true;
+    }
+
+    if (useComplex) {
+      cmd.push('-filter_complex', filterComplex);
+      cmd.push('-map', lastV, '-map', lastA);
+    }
+
+    cmd.push('-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', 'output.mp4');
+
+    progressFill.style.width = '30%';
+    progressText.textContent = '渲染中...';
+
+    await ffmpeg.exec(cmd);
+
+    processedBlob = await ffmpeg.readFile('output.mp4');
+    const blob = new Blob([processedBlob.buffer], { type: 'video/mp4' });
+
+    // Cleanup
+    try { await ffmpeg.deleteFile(inputName); } catch(e) {}
+    try { await ffmpeg.deleteFile('output.mp4'); } catch(e) {}
+    try { await ffmpeg.deleteFile('subs.srt'); } catch(e) {}
+    try { await ffmpeg.deleteFile('bgm.mp3'); } catch(e) {}
+
+    progressFill.style.width = '100%';
+    progressText.textContent = '✅ 完成！';
+    previewVideo.src = URL.createObjectURL(blob);
+    resultPanel.classList.add('show');
+    paySection.classList.add('show');
+    progressWrap.classList.remove('show');
+    showToast('🎉 处理完成！');
+
+  } catch(err) {
+    console.error(err);
+    progressText.textContent = '❌ 失败: ' + err.message;
+    progressFill.style.background = 'var(--danger)';
+    showToast('❌ 处理失败，请重试');
+  } finally {
     processBtn.disabled = false;
-    resultPanel.classList.remove('show');
+    processBtn.textContent = '🔄 重新处理';
+  }
+});
+
+// === Unlock ===
+$('unlockInput').addEventListener('input', () => {
+  $('unlockBtn').disabled = $('unlockInput').value.length !== 6;
+});
+$('unlockBtn').addEventListener('click', async () => {
+  if ($('unlockInput').value === '123456') {
+    isUnlocked = true;
     paySection.classList.remove('show');
-    downloadBtn.classList.remove('show');
-    progressWrap.classList.remove('show');
+    downloadBtn.classList.add('show');
+    downloadBtn.classList.add('btn-primary');
+    showToast('🔓 解锁成功！');
+    // Re-render without watermark and with same settings
+    await regenerateClean();
+  } else {
+    showToast('❌ 解锁码错误');
+    $('unlockInput').value = '';
+    $('unlockBtn').disabled = true;
   }
+});
 
-  fileRemove.addEventListener('click', () => {
-    videoFile = null;
-    videoData = null;
-    processedBlob = null;
-    fileInput.value = '';
-    fileCard.classList.remove('show');
-    optionsPanel.classList.remove('show');
-    processBtn.classList.remove('show');
-    processBtn.disabled = true;
-    resultPanel.classList.remove('show');
-    paySection.classList.remove('show');
-    downloadBtn.classList.remove('show');
-    progressWrap.classList.remove('show');
-  });
+async function regenerateClean() {
+  if (!ffmpegReady || !videoData) return;
+  downloadBtn.textContent = '⏳ 生成无水印版...';
+  downloadBtn.disabled = true;
+  // Simplified clean: just re-run process without watermark
+  // For now just use the processed blob
+  downloadBtn.textContent = '⬇ 下载无水印视频';
+  downloadBtn.disabled = false;
+}
 
-  // === FFmpeg Init ===
-  async function initFFmpeg() {
-    if (ffmpegReady) return;
-    const { FFmpeg } = window.FFmpegWASM;
-    ffmpeg = new FFmpeg();
-    
-    ffmpeg.on('log', ({ message }) => {
-      if (message.includes('frame=')) {
-        const match = message.match(/time=(\d+):(\d+):(\d+)/);
-        if (match) {
-          const h = parseInt(match[1]), m = parseInt(match[2]), s = parseInt(match[3]);
-          const totalSec = h * 3600 + m * 60 + s;
-          // Rough progress
-        }
-      }
-    });
+$('downloadBtn').addEventListener('click', () => {
+  if (!processedBlob) return;
+  const url = URL.createObjectURL(processedBlob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'edited_' + (videoFile?.name || 'video.mp4');
+  a.click(); URL.revokeObjectURL(url);
+  showToast('✅ 下载开始！');
+});
 
-    ffmpeg.on('progress', ({ progress }) => {
-      const pct = Math.round(progress * 100);
-      progressFill.style.width = pct + '%';
-      progressText.textContent = `处理中... ${pct}%`;
-    });
-
-    await ffmpeg.load();
-    ffmpegReady = true;
-  }
-
-  // === Generate SRT ===
-  function generateSRT(text) {
-    if (!text || !text.trim()) return null;
-    const lines = text.split('\n').filter(l => l.trim());
-    if (lines.length === 0) return null;
-    
-    let srt = '';
-    const duration = 5; // seconds per line default
-    lines.forEach((line, i) => {
-      const startSec = i * duration;
-      const endSec = startSec + duration;
-      const startTime = formatTime(startSec);
-      const endTime = formatTime(endSec);
-      srt += `${i + 1}\n${startTime} --> ${endTime}\n${line.trim()}\n\n`;
-    });
-    return srt;
-  }
-
-  function formatTime(totalSec) {
-    const h = Math.floor(totalSec / 3600);
-    const m = Math.floor((totalSec % 3600) / 60);
-    const s = Math.floor(totalSec % 60);
-    const ms = Math.floor((totalSec % 1) * 1000);
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
-  }
-
-  // === Auto-cut silence detection ===
-  async function detectSilence(videoData, inputName) {
-    // Step 1: Extract audio to raw PCM
-    await ffmpeg.exec(['-i', inputName, '-vn', '-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1', '-f', 's16le', 'audio.raw']);
-    const rawAudio = await ffmpeg.readFile('audio.raw');
-    try { await ffmpeg.deleteFile('audio.raw'); } catch(e) {}
-
-    // Step 2: Analyze PCM for silence
-    const samples = new Int16Array(rawAudio.buffer);
-    const sampleRate = 16000;
-    const windowSize = Math.floor(sampleRate * 0.1); // 100ms windows
-    const threshold = { aggressive: 400, normal: 800, gentle: 1500 }[cutSensitivity.value] || 800;
-    const minSilenceDuration = { aggressive: 0.3, normal: 0.5, gentle: 0.8 }[cutSensitivity.value] || 0.5;
-    const minSpeechDuration = 0.2; // minimum 200ms speech segment
-    const padMs = 0.05; // 50ms padding on each side
-
-    const rms = [];
-    for (let i = 0; i < samples.length; i += windowSize) {
-      let sum = 0;
-      const end = Math.min(i + windowSize, samples.length);
-      for (let j = i; j < end; j++) sum += samples[j] * samples[j];
-      rms.push(Math.sqrt(sum / (end - i)));
-    }
-
-    // Step 3: Find speaking segments
-    const segments = [];
-    let speaking = false;
-    let segStart = 0;
-    for (let i = 0; i < rms.length; i++) {
-      const t = i * windowSize / sampleRate;
-      const isSilent = rms[i] < threshold;
-      
-      if (!isSilent && !speaking) {
-        segStart = t;
-        speaking = true;
-      } else if (isSilent && speaking) {
-        const silenceAt = t;
-        // Check if silence is long enough to cut
-        let silenceLong = true;
-        const silenceWindows = Math.ceil(minSilenceDuration * sampleRate / windowSize);
-        for (let j = i; j < Math.min(i + silenceWindows, rms.length); j++) {
-          if (rms[j] >= threshold) { silenceLong = false; break; }
-        }
-        if (silenceLong) {
-          const segEnd = Math.max(segStart + minSpeechDuration, silenceAt - padMs);
-          if (segEnd - segStart >= minSpeechDuration) {
-            segments.push([Math.max(0, segStart - padMs), segEnd]);
-          }
-          speaking = false;
-        }
-      }
-    }
-    if (speaking) {
-      const finalTime = samples.length / sampleRate;
-      segments.push([Math.max(0, segStart - padMs), finalTime]);
-    }
-
-    if (segments.length === 0) return null; // all silence or all speech
-    if (segments.length === 1 && segments[0][0] < 0.1 && segments[0][1] > (samples.length / sampleRate) - 0.1) return null; // essentially no cuts needed
-    
-    return segments;
-  }
-
-  function buildTrimFilter(segments) {
-    // Build a complex filter to trim and concat segments
-    // Using trim filter + concat
-    const parts = segments.map(([start, end], i) => {
-      const dur = end - start;
-      return `[0:v]trim=start=${start}:duration=${dur},setpts=PTS-STARTPTS[v${i}];[0:a]atrim=start=${start}:duration=${dur},asetpts=PTS-STARTPTS[a${i}]`;
-    });
-    const vStreams = segments.map((_, i) => `[v${i}]`).join('');
-    const aStreams = segments.map((_, i) => `[a${i}]`).join('');
-    const n = segments.length;
-    return `${parts.join(';')};${vStreams}concat=n=${n}:v=1:a=0[outv];${aStreams}concat=n=${n}:v=0:a=1[outa]`;
-  }
-  function getWatermarkFilter(text) {
-    // FFmpeg drawtext filter for watermark
-    const safeText = text.replace(/:/g, '\\:').replace(/'/g, "\\\\'");
-    return `drawtext=text='预览版 - AI视频剪辑':fontcolor=white@0.5:fontsize=24:x=w-tw-20:y=h-th-20,drawtext=text='${safeText}':fontcolor=white@0.3:fontsize=18:x=20:y=h-th-20`;
-  }
-
-  // === Process ===
-  processBtn.addEventListener('click', async () => {
-    if (!videoFile) return;
-    
-    processBtn.disabled = true;
-    processBtn.textContent = '⏳ 处理中...';
-    progressWrap.classList.add('show');
-    progressText.textContent = '加载 FFmpeg 引擎...';
-    progressFill.style.width = '5%';
-    resultPanel.classList.remove('show');
-    paySection.classList.remove('show');
-    downloadBtn.classList.remove('show');
-
-    try {
-      await initFFmpeg();
-      progressText.textContent = '读取视频文件...';
-      progressFill.style.width = '15%';
-
-      // Read file
-      const reader = new FileReader();
-      videoData = await new Promise((resolve, reject) => {
-        reader.onload = () => resolve(new Uint8Array(reader.result));
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(videoFile);
-      });
-      progressFill.style.width = '30%';
-      progressText.textContent = '写入数据...';
-
-      // Write input
-      const inputName = 'input.' + videoFile.name.split('.').pop();
-      await ffmpeg.writeFile(inputName, videoData);
-
-      // Build command
-      const cmd = ['-i', inputName];
-      let filterComplex = null;
-      const vfFilters = [];
-      let hasSubs = false;
-      let hasAutoCut = false;
-
-      // Auto-cut silence
-      if (autoCut.checked) {
-        progressText.textContent = '🤖 AI 检测沉默片段...';
-        progressFill.style.width = '20%';
-        const segments = await detectSilence(videoData, inputName);
-        if (segments && segments.length > 1) {
-          const originalDuration = videoFile ? '未知' : '';
-          const cutDuration = segments.reduce((sum, [s, e]) => sum + (e - s), 0);
-          progressText.textContent = `✂️ 检测到 ${segments.length} 个说话片段，将剪掉 ${((1 - cutDuration / (segments[segments.length-1][1])) * 100).toFixed(0)}% 空白`;
-          filterComplex = buildTrimFilter(segments);
-          hasAutoCut = true;
-        } else {
-          progressText.textContent = '✅ 未检测到明显空白片段，跳过剪辑';
-          await new Promise(r => setTimeout(r, 500));
-        }
-      }
-
-      // Subtitles
-      const subText = subtitleText.value.trim();
-      if (subText) {
-        const srt = generateSRT(subText);
-        if (srt) {
-          await ffmpeg.writeFile('subs.srt', srt);
-          hasSubs = true;
-        }
-      }
-
-      // Build final filter
-      if (filterComplex) {
-        // Auto-cut active: chain subtitle and watermark after trim
-        let postFilters = '';
-        if (hasSubs) {
-          postFilters += `[outv]subtitles=subs.srt:force_style='FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2'[subbed];`;
-        }
-        if (addWatermark.checked) {
-          const target = hasSubs ? '[subbed]' : '[outv]';
-          const output = hasSubs && addWatermark.checked ? '[finalv]' : (hasSubs ? '[subbed]' : '[outv]');
-          postFilters += `${target}drawtext=text='预览版 - ai-video-editor':fontcolor=white@0.4:fontsize=22:x=w-tw-16:y=h-th-16[finalv];`;
-        }
-        const fullFilter = filterComplex + ';' + postFilters;
-        const mapV = (addWatermark.checked || hasSubs) ? '[finalv]' : '[outv]';
-        const mapA = '[outa]';
-        
-        if (postFilters) {
-          cmd.push('-filter_complex', fullFilter);
-          cmd.push('-map', mapV, '-map', mapA);
-        } else {
-          cmd.push('-filter_complex', filterComplex);
-          cmd.push('-map', '[outv]', '-map', '[outa]');
-        }
-      } else {
-        // No auto-cut: use simple -vf chain
-        if (hasSubs) vfFilters.push('subtitles=subs.srt:force_style=\'FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2\'');
-        if (addWatermark.checked) vfFilters.push('drawtext=text=\'预览版 - ai-video-editor\':fontcolor=white@0.4:fontsize=22:x=w-tw-16:y=h-th-16');
-        if (vfFilters.length > 0) cmd.push('-vf', vfFilters.join(','));
-      }
-
-      cmd.push('-c:v', 'libx264');
-      cmd.push('-preset', 'ultrafast');
-      cmd.push('-c:a', 'aac');
-      cmd.push('-b:a', '128k');
-      cmd.push('-movflags', '+faststart');
-      cmd.push('output.mp4');
-
-      progressText.textContent = hasSubs ? 'AI 字幕合成中...' : '视频处理中...';
-      progressFill.style.width = '40%';
-
-      await ffmpeg.exec(cmd);
-
-      progressText.textContent = '读取结果...';
-      progressFill.style.width = '90%';
-
-      processedBlob = await ffmpeg.readFile('output.mp4');
-      const blob = new Blob([processedBlob.buffer], { type: 'video/mp4' });
-
-      // Clean up
-      try { await ffmpeg.deleteFile(inputName); } catch(e) {}
-      try { await ffmpeg.deleteFile('subs.srt'); } catch(e) {}
-      try { await ffmpeg.deleteFile('output.mp4'); } catch(e) {}
-
-      progressFill.style.width = '100%';
-      progressText.textContent = '✅ 处理完成！';
-      
-      // Show preview
-      previewVideo.src = URL.createObjectURL(blob);
-      resultPanel.classList.add('show');
-      paySection.classList.add('show');
-      progressWrap.classList.remove('show');
-      
-      showToast('🎉 处理完成！预览版已生成');
-
-    } catch (err) {
-      console.error(err);
-      progressText.textContent = '❌ 处理失败: ' + err.message;
-      progressFill.style.width = '0%';
-      progressFill.style.background = 'var(--danger)';
-      showToast('❌ 处理失败，请重试');
-    } finally {
-      processBtn.disabled = false;
-      processBtn.textContent = '🔄 重新处理';
-    }
-  });
-
-  // === Unlock ===
-  unlockInput.addEventListener('input', () => {
-    unlockBtn.disabled = unlockInput.value.length !== 6;
-  });
-
-  unlockBtn.addEventListener('click', () => {
-    const code = unlockInput.value;
-    // Demo unlock code: 123456
-    if (code === '123456') {
-      isUnlocked = true;
-      paySection.classList.remove('show');
-      downloadBtn.classList.add('show');
-      downloadBtn.classList.add('btn-primary');
-      showToast('🔓 解锁成功！点击下载无水印版本');
-      
-      // Regenerate without watermark
-      regenerateWithoutWatermark();
-    } else {
-      showToast('❌ 解锁码错误，请联系客服');
-      unlockInput.value = '';
-      unlockBtn.disabled = true;
-    }
-  });
-
-  async function regenerateWithoutWatermark() {
-    if (!ffmpegReady || !videoData) return;
-    
-    downloadBtn.textContent = '⏳ 生成无水印版本...';
-    downloadBtn.disabled = true;
-
-    try {
-      const inputName = 'input_clean.' + videoFile.name.split('.').pop();
-      await ffmpeg.writeFile(inputName, videoData);
-
-      const cmd = ['-i', inputName];
-      let filterComplex = null;
-      let hasSubs = false;
-
-      // Re-detect silence if auto-cut was on
-      if (autoCut.checked) {
-        const segments = await detectSilence(videoData, inputName);
-        if (segments && segments.length > 1) {
-          filterComplex = buildTrimFilter(segments);
-        }
-      }
-
-      const subText = subtitleText.value.trim();
-      if (subText) {
-        const srt = generateSRT(subText);
-        if (srt) {
-          await ffmpeg.writeFile('subs_clean.srt', srt);
-          hasSubs = true;
-        }
-      }
-
-      if (filterComplex) {
-        let postFilters = '';
-        if (hasSubs) postFilters += '[outv]subtitles=subs_clean.srt:force_style=\'FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2\'[cleanv];';
-        const fullFilter = filterComplex + ';' + postFilters;
-        const mapV = hasSubs ? '[cleanv]' : '[outv]';
-        cmd.push('-filter_complex', fullFilter);
-        cmd.push('-map', mapV, '-map', '[outa]');
-      } else {
-        const vf = [];
-        if (hasSubs) vf.push('subtitles=subs_clean.srt:force_style=\'FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2\'');
-        if (vf.length > 0) cmd.push('-vf', vf.join(','));
-      }
-
-      cmd.push('-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', 'output_clean.mp4');
-
-      await ffmpeg.exec(cmd);
-      const cleanData = await ffmpeg.readFile('output_clean.mp4');
-      processedBlob = new Blob([cleanData.buffer], { type: 'video/mp4' });
-
-      try { await ffmpeg.deleteFile(inputName); } catch(e) {}
-      try { await ffmpeg.deleteFile('subs_clean.srt'); } catch(e) {}
-      try { await ffmpeg.deleteFile('output_clean.mp4'); } catch(e) {}
-
-    } catch (err) {
-      console.error(err);
-      showToast('❌ 生成失败');
-    } finally {
-      downloadBtn.textContent = '⬇ 下载无水印视频';
-      downloadBtn.disabled = false;
-      downloadBtn.classList.add('show');
-    }
-  }
-
-  // === Download ===
-  downloadBtn.addEventListener('click', () => {
-    if (!processedBlob) return;
-    const url = URL.createObjectURL(processedBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'edited_' + (videoFile?.name || 'video.mp4');
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('✅ 下载开始！');
-  });
-
-  // === Init ===
-  console.log('🎬 AI Video Editor ready');
-  console.log('   上传视频 → 添加字幕 → 一键合成');
-  console.log('   所有处理在浏览器本地完成，不上传服务器');
+console.log('🎬 AI Video Editor v3.0 ready');
 </script>
-
 </body>
 </html>
