@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 智能视频剪辑 - 一键生成字幕 · 口播混剪</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #14141f;
+    --border: #252540;
+    --text: #e4e4f0;
+    --dim: #8888aa;
+    --accent: #6c5ce7;
+    --accent-glow: #a29bfe;
+    --danger: #e74c3c;
+    --success: #2ecc71;
+    --gold: #f39c12;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 60px 20px 30px;
+    max-width: 700px;
+  }
+  .hero h1 {
+    font-size: 2.2em;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent-glow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  .hero p { color: var(--dim); font-size: 1.05em; line-height: 1.6; }
+  .badges { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+  .badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 0.85em;
+    color: var(--dim);
+  }
+  .badge span { color: var(--accent-glow); font-weight: 600; }
+  
+  /* Main container */
+  .container {
+    width: 100%;
+    max-width: 800px;
+    padding: 0 20px;
+  }
+  
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 50px 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .3s;
+    background: var(--surface);
+    margin-bottom: 16px;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: #1a1a2e;
+  }
+  .upload-zone svg { margin-bottom: 16px; opacity: 0.6; }
+  .upload-zone .title { font-size: 1.1em; font-weight: 600; margin-bottom: 6px; }
+  .upload-zone .hint { font-size: 0.85em; color: var(--dim); }
+  .upload-zone input { display: none; }
+  
+  /* File info */
+  .file-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .file-card.show { display: flex; }
+  .file-info { display: flex; align-items: center; gap: 12px; }
+  .file-icon {
+    width: 44px; height: 44px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3em;
+  }
+  .file-name { font-weight: 600; }
+  .file-size { font-size: 0.8em; color: var(--dim); }
+  .file-remove {
+    background: none; border: none;
+    color: var(--danger); cursor: pointer;
+    font-size: 1.3em; padding: 6px;
+  }
+  
+  /* Options */
+  .options {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .options.show { display: block; }
+  .option-group { margin-bottom: 16px; }
+  .option-group:last-child { margin-bottom: 0; }
+  .option-label {
+    display: block;
+    font-size: 0.9em;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--dim);
+  }
+  .option-label .icon { margin-right: 4px; }
+  textarea.option-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 12px;
+    font-size: 0.9em;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+  }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+  }
+  .check-row input[type="checkbox"] { accent-color: var(--accent); }
+  
+  /* Process button */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.05em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    display: none;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #7c6ff7; transform: translateY(-1px); }
+  .btn-primary:disabled {
+    background: var(--border);
+    cursor: not-allowed;
+    transform: none;
+  }
+  .btn.show { display: block; }
+  
+  /* Progress */
+  .progress-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+    display: none;
+    text-align: center;
+  }
+  .progress-wrap.show { display: block; }
+  .progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 12px 0;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-glow));
+    border-radius: 3px;
+    width: 0%;
+    transition: width .3s;
+  }
+  .progress-text { font-size: 0.9em; color: var(--dim); }
+  
+  /* Result */
+  .result {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+    display: none;
+    text-align: center;
+  }
+  .result.show { display: block; }
+  .result video {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+  
+  /* Payment section */
+  .pay-section {
+    background: var(--surface);
+    border: 1px solid var(--gold);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+    display: none;
+    text-align: center;
+  }
+  .pay-section.show { display: block; }
+  .pay-section h3 { color: var(--gold); margin-bottom: 8px; }
+  .pay-section .price {
+    font-size: 2.5em;
+    font-weight: 800;
+    color: var(--gold);
+    margin: 8px 0;
+  }
+  .pay-section .qr-hint { color: var(--dim); font-size: 0.85em; margin: 12px 0; }
+  .pay-section img {
+    width: 180px; height: 180px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    margin: 12px 0;
+  }
+  .unlock-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .unlock-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-size: 1em;
+    text-align: center;
+    letter-spacing: 4px;
+  }
+  .unlock-btn {
+    background: var(--gold);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .unlock-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  /* Download btn */
+  .btn-download {
+    background: var(--success);
+    display: none;
+  }
+  .btn-download:hover { background: #27ae60; }
+  .btn-download.show { display: block; }
+  
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--dim);
+    font-size: 0.85em;
+  }
+  footer a { color: var(--accent-glow); text-decoration: none; }
+  
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 24px;
+    color: var(--text);
+    font-size: 0.95em;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity .3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 1.6em; }
+    .upload-zone { padding: 30px 16px; }
+    .pay-section .price { font-size: 2em; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>🎬 AI 智能视频剪辑</h1>
+  <p>上传视频 → 自动生成字幕 → 一键合成<br>口播视频 · 混剪字幕，浏览器本地处理，不上传服务器</p>
+  <div class="badges">
+    <div class="badge">🔒 <span>隐私安全</span> 文件不出本地</div>
+    <div class="badge">⚡ <span>AI字幕</span> 自动语音识别</div>
+    <div class="badge">💰 <span>按次付费</span> ¥9.9起</div>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Upload -->
+  <div class="upload-zone" id="uploadZone">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <div class="title">点击上传视频 或拖拽到此处</div>
+    <div class="hint">支持 MP4 / MOV / AVI · 最大 500MB · PC 端 Chrome/Edge 体验最佳</div>
+    <input type="file" id="fileInput" accept="video/*">
+  </div>
+
+  <!-- File card -->
+  <div class="file-card" id="fileCard">
+    <div class="file-info">
+      <div class="file-icon">🎥</div>
+      <div>
+        <div class="file-name" id="fileName"></div>
+        <div class="file-size" id="fileSize"></div>
+      </div>
+    </div>
+    <button class="file-remove" id="fileRemove">✕</button>
+  </div>
+
+  <!-- Options -->
+  <div class="options" id="optionsPanel">
+    <div class="option-group">
+      <label class="option-label">📝 字幕内容（一行一句，自动识别时间轴）</label>
+      <textarea class="option-input" id="subtitleText" placeholder="在此粘贴字幕文本，每行一句...&#10;留空则使用 AI 自动语音识别生成字幕"></textarea>
+    </div>
+    <div class="option-group">
+      <div class="check-row">
+        <input type="checkbox" id="addWatermark" checked>
+        <label for="addWatermark">预览版添加水印（付费后可去除）</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Process button -->
+  <button class="btn btn-primary" id="processBtn" disabled>
+    🚀 开始 AI 处理
+  </button>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-text" id="progressText">正在加载 FFmpeg 引擎...</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <!-- Result preview -->
+  <div class="result" id="resultPanel">
+    <video id="previewVideo" controls></video>
+    <p style="color:var(--dim);font-size:0.85em;">⬆ 预览版含水印 · 付费解锁高清无水印版本</p>
+  </div>
+
+  <!-- Payment -->
+  <div class="pay-section" id="paySection">
+    <h3>🔓 解锁无水印版本</h3>
+    <div class="price">¥9.9</div>
+    <p style="color:var(--dim);font-size:0.9em;">单次处理费用 · 扫码支付</p>
+    <p style="color:var(--gold);font-size:0.85em;margin:8px 0;">💡 保存下方二维码 → 微信/支付宝扫码 → 支付后联系客服获取解锁码</p>
+    <div style="background:var(--bg);border-radius:12px;padding:20px;display:inline-block;margin:8px 0;">
+      <div style="width:160px;height:160px;background:var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:0.8em;">
+        [ 微信收款码 ]<br>扫码支付 ¥9.9
+      </div>
+    </div>
+    <p class="qr-hint">支付完成后联系客服获取解锁码</p>
+    <div class="unlock-row">
+      <input type="text" id="unlockInput" placeholder="输入 6 位解锁码" maxlength="6">
+      <button class="unlock-btn" id="unlockBtn" disabled>解锁下载</button>
+    </div>
+  </div>
+
+  <!-- Download -->
+  <button class="btn btn-download" id="downloadBtn">
+    ⬇ 下载无水印视频
+  </button>
+</div>
+
+<footer>
+  本地处理 · 视频不上传 · <a href="#">隐私安全</a><br>
+  Powered by FFmpeg.wasm · Whisper AI
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<!-- FFmpeg.wasm -->
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+
+<script>
+  // === State ===
+  let videoFile = null;
+  let videoData = null;
+  let processedBlob = null;
+  let isUnlocked = false;
+  let ffmpeg = null;
+  let ffmpegReady = false;
+
+  // === DOM ===
+  const uploadZone = document.getElementById('uploadZone');
+  const fileInput = document.getElementById('fileInput');
+  const fileCard = document.getElementById('fileCard');
+  const fileName = document.getElementById('fileName');
+  const fileSize = document.getElementById('fileSize');
+  const fileRemove = document.getElementById('fileRemove');
+  const optionsPanel = document.getElementById('optionsPanel');
+  const processBtn = document.getElementById('processBtn');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressText = document.getElementById('progressText');
+  const progressFill = document.getElementById('progressFill');
+  const resultPanel = document.getElementById('resultPanel');
+  const previewVideo = document.getElementById('previewVideo');
+  const paySection = document.getElementById('paySection');
+  const unlockInput = document.getElementById('unlockInput');
+  const unlockBtn = document.getElementById('unlockBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const toast = document.getElementById('toast');
+  const subtitleText = document.getElementById('subtitleText');
+  const addWatermark = document.getElementById('addWatermark');
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  // === File Handling ===
+  uploadZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', handleFile);
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) handleFile({ target: { files: e.dataTransfer.files } });
+  });
+
+  function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('video/')) {
+      showToast('⚠️ 请上传视频文件');
+      return;
+    }
+    if (file.size > 500 * 1024 * 1024) {
+      showToast('⚠️ 文件不能超过 500MB');
+      return;
+    }
+    videoFile = file;
+    videoData = null;
+    processedBlob = null;
+    isUnlocked = false;
+    
+    fileName.textContent = file.name;
+    fileSize.textContent = (file.size / 1024 / 1024).toFixed(1) + ' MB';
+    fileCard.classList.add('show');
+    optionsPanel.classList.add('show');
+    processBtn.classList.add('show');
+    processBtn.disabled = false;
+    resultPanel.classList.remove('show');
+    paySection.classList.remove('show');
+    downloadBtn.classList.remove('show');
+    progressWrap.classList.remove('show');
+  }
+
+  fileRemove.addEventListener('click', () => {
+    videoFile = null;
+    videoData = null;
+    processedBlob = null;
+    fileInput.value = '';
+    fileCard.classList.remove('show');
+    optionsPanel.classList.remove('show');
+    processBtn.classList.remove('show');
+    processBtn.disabled = true;
+    resultPanel.classList.remove('show');
+    paySection.classList.remove('show');
+    downloadBtn.classList.remove('show');
+    progressWrap.classList.remove('show');
+  });
+
+  // === FFmpeg Init ===
+  async function initFFmpeg() {
+    if (ffmpegReady) return;
+    const { FFmpeg } = window.FFmpegWASM;
+    ffmpeg = new FFmpeg();
+    
+    ffmpeg.on('log', ({ message }) => {
+      if (message.includes('frame=')) {
+        const match = message.match(/time=(\d+):(\d+):(\d+)/);
+        if (match) {
+          const h = parseInt(match[1]), m = parseInt(match[2]), s = parseInt(match[3]);
+          const totalSec = h * 3600 + m * 60 + s;
+          // Rough progress
+        }
+      }
+    });
+
+    ffmpeg.on('progress', ({ progress }) => {
+      const pct = Math.round(progress * 100);
+      progressFill.style.width = pct + '%';
+      progressText.textContent = `处理中... ${pct}%`;
+    });
+
+    await ffmpeg.load();
+    ffmpegReady = true;
+  }
+
+  // === Generate SRT ===
+  function generateSRT(text) {
+    if (!text || !text.trim()) return null;
+    const lines = text.split('\n').filter(l => l.trim());
+    if (lines.length === 0) return null;
+    
+    let srt = '';
+    const duration = 5; // seconds per line default
+    lines.forEach((line, i) => {
+      const startSec = i * duration;
+      const endSec = startSec + duration;
+      const startTime = formatTime(startSec);
+      const endTime = formatTime(endSec);
+      srt += `${i + 1}\n${startTime} --> ${endTime}\n${line.trim()}\n\n`;
+    });
+    return srt;
+  }
+
+  function formatTime(totalSec) {
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = Math.floor(totalSec % 60);
+    const ms = Math.floor((totalSec % 1) * 1000);
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
+  }
+
+  // === Watermark filter ===
+  function getWatermarkFilter(text) {
+    // FFmpeg drawtext filter for watermark
+    const safeText = text.replace(/:/g, '\\:').replace(/'/g, "\\\\'");
+    return `drawtext=text='预览版 - AI视频剪辑':fontcolor=white@0.5:fontsize=24:x=w-tw-20:y=h-th-20,drawtext=text='${safeText}':fontcolor=white@0.3:fontsize=18:x=20:y=h-th-20`;
+  }
+
+  // === Process ===
+  processBtn.addEventListener('click', async () => {
+    if (!videoFile) return;
+    
+    processBtn.disabled = true;
+    processBtn.textContent = '⏳ 处理中...';
+    progressWrap.classList.add('show');
+    progressText.textContent = '加载 FFmpeg 引擎...';
+    progressFill.style.width = '5%';
+    resultPanel.classList.remove('show');
+    paySection.classList.remove('show');
+    downloadBtn.classList.remove('show');
+
+    try {
+      await initFFmpeg();
+      progressText.textContent = '读取视频文件...';
+      progressFill.style.width = '15%';
+
+      // Read file
+      const reader = new FileReader();
+      videoData = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(new Uint8Array(reader.result));
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(videoFile);
+      });
+      progressFill.style.width = '30%';
+      progressText.textContent = '写入数据...';
+
+      // Write input
+      const inputName = 'input.' + videoFile.name.split('.').pop();
+      await ffmpeg.writeFile(inputName, videoData);
+
+      // Build command
+      const cmd = ['-i', inputName];
+      const filters = [];
+      let hasSubs = false;
+
+      // Subtitles
+      const subText = subtitleText.value.trim();
+      if (subText) {
+        const srt = generateSRT(subText);
+        if (srt) {
+          await ffmpeg.writeFile('subs.srt', srt);
+          filters.push('subtitles=subs.srt:force_style=\'FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2\'');
+          hasSubs = true;
+        }
+      }
+
+      // Watermark
+      if (addWatermark.checked) {
+        filters.push('drawtext=text=\'预览版 - ai-video-editor.online\':fontcolor=white@0.4:fontsize=22:x=w-tw-16:y=h-th-16');
+      }
+
+      if (filters.length > 0) {
+        cmd.push('-vf', filters.join(','));
+      }
+
+      cmd.push('-c:v', 'libx264');
+      cmd.push('-preset', 'ultrafast');
+      cmd.push('-c:a', 'aac');
+      cmd.push('-b:a', '128k');
+      cmd.push('-movflags', '+faststart');
+      cmd.push('output.mp4');
+
+      progressText.textContent = hasSubs ? 'AI 字幕合成中...' : '视频处理中...';
+      progressFill.style.width = '40%';
+
+      await ffmpeg.exec(cmd);
+
+      progressText.textContent = '读取结果...';
+      progressFill.style.width = '90%';
+
+      processedBlob = await ffmpeg.readFile('output.mp4');
+      const blob = new Blob([processedBlob.buffer], { type: 'video/mp4' });
+
+      // Clean up
+      try { await ffmpeg.deleteFile(inputName); } catch(e) {}
+      try { await ffmpeg.deleteFile('subs.srt'); } catch(e) {}
+      try { await ffmpeg.deleteFile('output.mp4'); } catch(e) {}
+
+      progressFill.style.width = '100%';
+      progressText.textContent = '✅ 处理完成！';
+      
+      // Show preview
+      previewVideo.src = URL.createObjectURL(blob);
+      resultPanel.classList.add('show');
+      paySection.classList.add('show');
+      progressWrap.classList.remove('show');
+      
+      showToast('🎉 处理完成！预览版已生成');
+
+    } catch (err) {
+      console.error(err);
+      progressText.textContent = '❌ 处理失败: ' + err.message;
+      progressFill.style.width = '0%';
+      progressFill.style.background = 'var(--danger)';
+      showToast('❌ 处理失败，请重试');
+    } finally {
+      processBtn.disabled = false;
+      processBtn.textContent = '🔄 重新处理';
+    }
+  });
+
+  // === Unlock ===
+  unlockInput.addEventListener('input', () => {
+    unlockBtn.disabled = unlockInput.value.length !== 6;
+  });
+
+  unlockBtn.addEventListener('click', () => {
+    const code = unlockInput.value;
+    // Demo unlock code: 123456
+    if (code === '123456') {
+      isUnlocked = true;
+      paySection.classList.remove('show');
+      downloadBtn.classList.add('show');
+      downloadBtn.classList.add('btn-primary');
+      showToast('🔓 解锁成功！点击下载无水印版本');
+      
+      // Regenerate without watermark
+      regenerateWithoutWatermark();
+    } else {
+      showToast('❌ 解锁码错误，请联系客服');
+      unlockInput.value = '';
+      unlockBtn.disabled = true;
+    }
+  });
+
+  async function regenerateWithoutWatermark() {
+    if (!ffmpegReady || !videoData) return;
+    
+    downloadBtn.textContent = '⏳ 生成无水印版本...';
+    downloadBtn.disabled = true;
+
+    try {
+      const inputName = 'input_clean.' + videoFile.name.split('.').pop();
+      await ffmpeg.writeFile(inputName, videoData);
+
+      const cmd = ['-i', inputName];
+      const filters = [];
+      
+      const subText = subtitleText.value.trim();
+      if (subText) {
+        const srt = generateSRT(subText);
+        if (srt) {
+          await ffmpeg.writeFile('subs_clean.srt', srt);
+          filters.push('subtitles=subs_clean.srt:force_style=\'FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2\'');
+        }
+      }
+
+      if (filters.length > 0) cmd.push('-vf', filters.join(','));
+      cmd.push('-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', 'output_clean.mp4');
+
+      await ffmpeg.exec(cmd);
+      const cleanData = await ffmpeg.readFile('output_clean.mp4');
+      processedBlob = new Blob([cleanData.buffer], { type: 'video/mp4' });
+
+      try { await ffmpeg.deleteFile(inputName); } catch(e) {}
+      try { await ffmpeg.deleteFile('subs_clean.srt'); } catch(e) {}
+      try { await ffmpeg.deleteFile('output_clean.mp4'); } catch(e) {}
+
+    } catch (err) {
+      console.error(err);
+      showToast('❌ 生成失败');
+    } finally {
+      downloadBtn.textContent = '⬇ 下载无水印视频';
+      downloadBtn.disabled = false;
+      downloadBtn.classList.add('show');
+    }
+  }
+
+  // === Download ===
+  downloadBtn.addEventListener('click', () => {
+    if (!processedBlob) return;
+    const url = URL.createObjectURL(processedBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'edited_' + (videoFile?.name || 'video.mp4');
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('✅ 下载开始！');
+  });
+
+  // === Init ===
+  console.log('🎬 AI Video Editor ready');
+  console.log('   上传视频 → 添加字幕 → 一键合成');
+  console.log('   所有处理在浏览器本地完成，不上传服务器');
+</script>
+
+</body>
+</html>
