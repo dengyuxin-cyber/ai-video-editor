@@ -319,7 +319,8 @@
   <p>上传视频 → 自动生成字幕 → 一键合成<br>口播视频 · 混剪字幕，浏览器本地处理，不上传服务器</p>
   <div class="badges">
     <div class="badge">🔒 <span>隐私安全</span> 文件不出本地</div>
-    <div class="badge">⚡ <span>AI字幕</span> 自动语音识别</div>
+    <div class="badge">✂️ <span>AI自动剪辑</span> 智能去空白</div>
+    <div class="badge">📝 <span>字幕合成</span> 一键添加</div>
     <div class="badge">💰 <span>按次付费</span> ¥9.9起</div>
   </div>
 </div>
@@ -359,6 +360,18 @@
       <div class="check-row">
         <input type="checkbox" id="addWatermark" checked>
         <label for="addWatermark">预览版添加水印（付费后可去除）</label>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="autoCut" checked>
+        <label for="autoCut">🤖 自动剪辑 — 检测并剪掉沉默/空白片段（适合口播视频）</label>
+      </div>
+      <div class="check-row" id="cutSettings" style="padding-left:20px;display:none;">
+        <span style="color:var(--dim);font-size:0.85em;">灵敏度：</span>
+        <select id="cutSensitivity" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;">
+          <option value="aggressive">激进（剪得多）</option>
+          <option value="normal" selected>标准</option>
+          <option value="gentle">保守（剪得少）</option>
+        </select>
       </div>
     </div>
   </div>
@@ -444,6 +457,14 @@
   const toast = document.getElementById('toast');
   const subtitleText = document.getElementById('subtitleText');
   const addWatermark = document.getElementById('addWatermark');
+  const autoCut = document.getElementById('autoCut');
+  const cutSensitivity = document.getElementById('cutSensitivity');
+  const cutSettings = document.getElementById('cutSettings');
+
+  // Show/hide sensitivity
+  autoCut.addEventListener('change', () => {
+    cutSettings.style.display = autoCut.checked ? 'block' : 'none';
+  });
 
   function showToast(msg) {
     toast.textContent = msg;
@@ -558,7 +579,81 @@
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
   }
 
-  // === Watermark filter ===
+  // === Auto-cut silence detection ===
+  async function detectSilence(videoData, inputName) {
+    // Step 1: Extract audio to raw PCM
+    await ffmpeg.exec(['-i', inputName, '-vn', '-acodec', 'pcm_s16le', '-ar', '16000', '-ac', '1', '-f', 's16le', 'audio.raw']);
+    const rawAudio = await ffmpeg.readFile('audio.raw');
+    try { await ffmpeg.deleteFile('audio.raw'); } catch(e) {}
+
+    // Step 2: Analyze PCM for silence
+    const samples = new Int16Array(rawAudio.buffer);
+    const sampleRate = 16000;
+    const windowSize = Math.floor(sampleRate * 0.1); // 100ms windows
+    const threshold = { aggressive: 400, normal: 800, gentle: 1500 }[cutSensitivity.value] || 800;
+    const minSilenceDuration = { aggressive: 0.3, normal: 0.5, gentle: 0.8 }[cutSensitivity.value] || 0.5;
+    const minSpeechDuration = 0.2; // minimum 200ms speech segment
+    const padMs = 0.05; // 50ms padding on each side
+
+    const rms = [];
+    for (let i = 0; i < samples.length; i += windowSize) {
+      let sum = 0;
+      const end = Math.min(i + windowSize, samples.length);
+      for (let j = i; j < end; j++) sum += samples[j] * samples[j];
+      rms.push(Math.sqrt(sum / (end - i)));
+    }
+
+    // Step 3: Find speaking segments
+    const segments = [];
+    let speaking = false;
+    let segStart = 0;
+    for (let i = 0; i < rms.length; i++) {
+      const t = i * windowSize / sampleRate;
+      const isSilent = rms[i] < threshold;
+      
+      if (!isSilent && !speaking) {
+        segStart = t;
+        speaking = true;
+      } else if (isSilent && speaking) {
+        const silenceAt = t;
+        // Check if silence is long enough to cut
+        let silenceLong = true;
+        const silenceWindows = Math.ceil(minSilenceDuration * sampleRate / windowSize);
+        for (let j = i; j < Math.min(i + silenceWindows, rms.length); j++) {
+          if (rms[j] >= threshold) { silenceLong = false; break; }
+        }
+        if (silenceLong) {
+          const segEnd = Math.max(segStart + minSpeechDuration, silenceAt - padMs);
+          if (segEnd - segStart >= minSpeechDuration) {
+            segments.push([Math.max(0, segStart - padMs), segEnd]);
+          }
+          speaking = false;
+        }
+      }
+    }
+    if (speaking) {
+      const finalTime = samples.length / sampleRate;
+      segments.push([Math.max(0, segStart - padMs), finalTime]);
+    }
+
+    if (segments.length === 0) return null; // all silence or all speech
+    if (segments.length === 1 && segments[0][0] < 0.1 && segments[0][1] > (samples.length / sampleRate) - 0.1) return null; // essentially no cuts needed
+    
+    return segments;
+  }
+
+  function buildTrimFilter(segments) {
+    // Build a complex filter to trim and concat segments
+    // Using trim filter + concat
+    const parts = segments.map(([start, end], i) => {
+      const dur = end - start;
+      return `[0:v]trim=start=${start}:duration=${dur},setpts=PTS-STARTPTS[v${i}];[0:a]atrim=start=${start}:duration=${dur},asetpts=PTS-STARTPTS[a${i}]`;
+    });
+    const vStreams = segments.map((_, i) => `[v${i}]`).join('');
+    const aStreams = segments.map((_, i) => `[a${i}]`).join('');
+    const n = segments.length;
+    return `${parts.join(';')};${vStreams}concat=n=${n}:v=1:a=0[outv];${aStreams}concat=n=${n}:v=0:a=1[outa]`;
+  }
   function getWatermarkFilter(text) {
     // FFmpeg drawtext filter for watermark
     const safeText = text.replace(/:/g, '\\:').replace(/'/g, "\\\\'");
@@ -599,8 +694,27 @@
 
       // Build command
       const cmd = ['-i', inputName];
-      const filters = [];
+      let filterComplex = null;
+      const vfFilters = [];
       let hasSubs = false;
+      let hasAutoCut = false;
+
+      // Auto-cut silence
+      if (autoCut.checked) {
+        progressText.textContent = '🤖 AI 检测沉默片段...';
+        progressFill.style.width = '20%';
+        const segments = await detectSilence(videoData, inputName);
+        if (segments && segments.length > 1) {
+          const originalDuration = videoFile ? '未知' : '';
+          const cutDuration = segments.reduce((sum, [s, e]) => sum + (e - s), 0);
+          progressText.textContent = `✂️ 检测到 ${segments.length} 个说话片段，将剪掉 ${((1 - cutDuration / (segments[segments.length-1][1])) * 100).toFixed(0)}% 空白`;
+          filterComplex = buildTrimFilter(segments);
+          hasAutoCut = true;
+        } else {
+          progressText.textContent = '✅ 未检测到明显空白片段，跳过剪辑';
+          await new Promise(r => setTimeout(r, 500));
+        }
+      }
 
       // Subtitles
       const subText = subtitleText.value.trim();
@@ -608,18 +722,38 @@
         const srt = generateSRT(subText);
         if (srt) {
           await ffmpeg.writeFile('subs.srt', srt);
-          filters.push('subtitles=subs.srt:force_style=\'FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2\'');
           hasSubs = true;
         }
       }
 
-      // Watermark
-      if (addWatermark.checked) {
-        filters.push('drawtext=text=\'预览版 - ai-video-editor.online\':fontcolor=white@0.4:fontsize=22:x=w-tw-16:y=h-th-16');
-      }
-
-      if (filters.length > 0) {
-        cmd.push('-vf', filters.join(','));
+      // Build final filter
+      if (filterComplex) {
+        // Auto-cut active: chain subtitle and watermark after trim
+        let postFilters = '';
+        if (hasSubs) {
+          postFilters += `[outv]subtitles=subs.srt:force_style='FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2'[subbed];`;
+        }
+        if (addWatermark.checked) {
+          const target = hasSubs ? '[subbed]' : '[outv]';
+          const output = hasSubs && addWatermark.checked ? '[finalv]' : (hasSubs ? '[subbed]' : '[outv]');
+          postFilters += `${target}drawtext=text='预览版 - ai-video-editor':fontcolor=white@0.4:fontsize=22:x=w-tw-16:y=h-th-16[finalv];`;
+        }
+        const fullFilter = filterComplex + ';' + postFilters;
+        const mapV = (addWatermark.checked || hasSubs) ? '[finalv]' : '[outv]';
+        const mapA = '[outa]';
+        
+        if (postFilters) {
+          cmd.push('-filter_complex', fullFilter);
+          cmd.push('-map', mapV, '-map', mapA);
+        } else {
+          cmd.push('-filter_complex', filterComplex);
+          cmd.push('-map', '[outv]', '-map', '[outa]');
+        }
+      } else {
+        // No auto-cut: use simple -vf chain
+        if (hasSubs) vfFilters.push('subtitles=subs.srt:force_style=\'FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2\'');
+        if (addWatermark.checked) vfFilters.push('drawtext=text=\'预览版 - ai-video-editor\':fontcolor=white@0.4:fontsize=22:x=w-tw-16:y=h-th-16');
+        if (vfFilters.length > 0) cmd.push('-vf', vfFilters.join(','));
       }
 
       cmd.push('-c:v', 'libx264');
@@ -703,18 +837,39 @@
       await ffmpeg.writeFile(inputName, videoData);
 
       const cmd = ['-i', inputName];
-      const filters = [];
-      
+      let filterComplex = null;
+      let hasSubs = false;
+
+      // Re-detect silence if auto-cut was on
+      if (autoCut.checked) {
+        const segments = await detectSilence(videoData, inputName);
+        if (segments && segments.length > 1) {
+          filterComplex = buildTrimFilter(segments);
+        }
+      }
+
       const subText = subtitleText.value.trim();
       if (subText) {
         const srt = generateSRT(subText);
         if (srt) {
           await ffmpeg.writeFile('subs_clean.srt', srt);
-          filters.push('subtitles=subs_clean.srt:force_style=\'FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2\'');
+          hasSubs = true;
         }
       }
 
-      if (filters.length > 0) cmd.push('-vf', filters.join(','));
+      if (filterComplex) {
+        let postFilters = '';
+        if (hasSubs) postFilters += '[outv]subtitles=subs_clean.srt:force_style=\'FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2\'[cleanv];';
+        const fullFilter = filterComplex + ';' + postFilters;
+        const mapV = hasSubs ? '[cleanv]' : '[outv]';
+        cmd.push('-filter_complex', fullFilter);
+        cmd.push('-map', mapV, '-map', '[outa]');
+      } else {
+        const vf = [];
+        if (hasSubs) vf.push('subtitles=subs_clean.srt:force_style=\'FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2\'');
+        if (vf.length > 0) cmd.push('-vf', vf.join(','));
+      }
+
       cmd.push('-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', 'output_clean.mp4');
 
       await ffmpeg.exec(cmd);
