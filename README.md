@@ -15,7 +15,7 @@
 
 - FFmpeg.wasm — 浏览器端视频处理
 - 纯前端，无需后端
-- 托管于 Gitee Pages
+- 托管于 GitHub Pages: `https://dengyuxin-cyber.github.io/ai-video-editor`
 
 ## 使用
 
