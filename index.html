@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 智能视频剪辑 - 一键生成字幕 · 口播混剪 · 多段转场</title>
+<title>AI 智能视频剪辑 v4.0 — 多段混剪 · 独立转场 · 余额充值</title>
 <style>
   :root {
     --bg: #0a0a0f; --surface: #14141f; --border: #252540; --text: #e4e4f0;
     --dim: #8888aa; --accent: #6c5ce7; --accent-glow: #a29bfe;
     --danger: #e74c3c; --success: #2ecc71; --gold: #f39c12; --tab-active: #1e1e35;
-    --r: 12px;
+    --r: 12px; --card-bg: #1a1a2e;
   }
   * { margin:0;padding:0;box-sizing:border-box; }
   body {
@@ -17,28 +17,46 @@
     background: var(--bg); color: var(--text); min-height: 100vh;
     display: flex; flex-direction: column; align-items: center;
   }
-  .hero { text-align:center; padding:44px 16px 16px; max-width:780px; }
+
+  /* === Nav Balance Bar === */
+  .nav-bar {
+    width:100%; max-width:920px; display:flex; justify-content:flex-end; align-items:center;
+    padding:12px 16px; gap:12px;
+  }
+  .balance-display {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:6px 16px; font-size:.82em; display:flex; align-items:center; gap:6px; cursor:pointer;
+  }
+  .balance-display:hover { border-color:var(--accent); }
+  .bal-amount { color:var(--gold); font-weight:700; }
+  .btn-sm {
+    background:var(--accent); color:#fff; border:none; border-radius:16px;
+    padding:5px 14px; font-size:.78em; cursor:pointer; font-weight:600;
+  }
+  .btn-sm:hover { background:#7c6ff7; }
+
+  /* === Hero === */
+  .hero { text-align:center; padding:44px 16px 20px; max-width:780px; }
   .hero h1 {
-    font-size:2em; font-weight:700;
-    background: linear-gradient(135deg,var(--accent),var(--accent-glow));
+    font-size:2.2em; font-weight:700;
+    background: linear-gradient(135deg,var(--accent),var(--accent-glow),#fd79a8);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:8px;
   }
-  .hero p { color:var(--dim); font-size:1em; line-height:1.5; }
-  .badges { display:flex; gap:6px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
-  .badge { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:4px 12px; font-size:.78em; color:var(--dim); }
-  .badge span { color:var(--accent-glow); font-weight:600; }
-  .container { width:100%; max-width:920px; padding:0 16px; }
+  .hero .subtitle { color:var(--dim); font-size:1em; line-height:1.6; max-width:560px; margin:0 auto; }
+  .hero .subtitle strong { color:var(--accent-glow); }
 
-  /* Upload */
-  .upload-zone {
-    border:2px dashed var(--border); border-radius:var(--r); padding:36px 16px;
-    text-align:center; cursor:pointer; transition:all .3s; background:var(--surface); margin-bottom:10px;
+  /* Feature Cards */
+  .features { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; max-width:780px; padding:0 16px 24px; }
+  .feat-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+    padding:16px; text-align:center; transition:all .25s; cursor:default;
   }
-  .upload-zone:hover, .upload-zone.drag-over { border-color:var(--accent); background:#1a1a2e; }
-  .upload-zone svg { margin-bottom:8px; opacity:.6; }
-  .upload-zone .title { font-size:1em; font-weight:600; margin-bottom:2px; }
-  .upload-zone .hint { font-size:.78em; color:var(--dim); }
-  .upload-zone input { display:none; }
+  .feat-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .feat-card .fc-icon { font-size:2em; margin-bottom:6px; }
+  .feat-card .fc-title { font-weight:600; font-size:.88em; margin-bottom:4px; }
+  .feat-card .fc-desc { font-size:.72em; color:var(--dim); line-height:1.4; }
+
+  .container { width:100%; max-width:920px; padding:0 16px; }
 
   /* Mode toggle */
   .mode-toggle { display:flex; gap:0; margin-bottom:10px; border-radius:10px; overflow:hidden; border:1px solid var(--border); background:var(--surface); }
@@ -46,29 +64,18 @@
   .mode-btn.active { background:var(--accent); color:#fff; }
   .mode-btn:hover:not(.active) { color:var(--text); }
 
-  /* Clip list */
-  .clip-list { display:none; margin-bottom:10px; }
-  .clip-list.show { display:block; }
-  .clip-item {
-    background:var(--surface); border:1px solid var(--border); border-radius:10px;
-    padding:10px 14px; margin-bottom:6px; display:flex; align-items:center; gap:10px; transition:all .2s;
+  /* Upload */
+  .upload-zone {
+    border:2px dashed var(--border); border-radius:var(--r); padding:36px 16px;
+    text-align:center; cursor:pointer; transition:all .3s; background:var(--surface); margin-bottom:10px;
   }
-  .clip-num { width:28px; height:28px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.78em; font-weight:700; flex-shrink:0; }
-  .clip-name { flex:1; font-size:.85em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .clip-dur { font-size:.75em; color:var(--dim); white-space:nowrap; }
-  .clip-del { background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1em; padding:4px; }
-  .clip-arrow { color:var(--dim); font-size:.75em; visibility:hidden; }
-  .clip-item:not(:last-child) .clip-arrow { visibility:visible; }
-  .transition-row {
-    display:flex; align-items:center; gap:8px; padding:2px 10px 8px 52px; font-size:.75em; color:var(--dim);
-  }
-  .transition-row select {
-    background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:3px 8px; font-size:.8em;
-  }
-  .trans-dur { display:flex; align-items:center; gap:4px; }
-  .trans-dur input { width:50px; background:var(--bg); border:1px solid var(--border); border-radius:4px; color:var(--text); padding:2px 4px; font-size:.8em; text-align:center; }
+  .upload-zone:hover, .upload-zone.drag-over { border-color:var(--accent); background:var(--card-bg); }
+  .upload-zone svg { margin-bottom:8px; opacity:.6; }
+  .upload-zone .title { font-size:1em; font-weight:600; margin-bottom:2px; }
+  .upload-zone .hint { font-size:.78em; color:var(--dim); }
+  .upload-zone input { display:none; }
 
-  /* File card (single mode) */
+  /* File card */
   .file-card {
     background:var(--surface); border:1px solid var(--border); border-radius:10px;
     padding:10px 14px; display:none; align-items:center; justify-content:space-between; margin-bottom:10px;
@@ -79,6 +86,53 @@
   .file-name { font-weight:600; font-size:.85em; }
   .file-size { font-size:.72em; color:var(--dim); }
   .file-remove { background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1em; }
+
+  /* Clip list — v4 per-clip transition */
+  .clip-list { display:none; margin-bottom:10px; }
+  .clip-list.show { display:block; }
+  .clip-item {
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:10px 14px; margin-bottom:4px; display:flex; align-items:center; gap:10px; transition:all .2s;
+  }
+  .clip-num { width:28px; height:28px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.78em; font-weight:700; flex-shrink:0; }
+  .clip-name { flex:1; font-size:.85em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .clip-dur { font-size:.75em; color:var(--dim); white-space:nowrap; }
+  .clip-del { background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1em; padding:4px; }
+
+  /* Per-clip transition row */
+  .clip-trans-row {
+    display:flex; align-items:center; gap:8px; padding:6px 10px 6px 52px; font-size:.75em; color:var(--dim);
+    background:var(--card-bg); border:1px solid var(--border); border-radius:8px; margin-bottom:6px;
+  }
+  .clip-trans-row select {
+    background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:3px 8px; font-size:.82em; cursor:pointer;
+  }
+  .trans-preview {
+    width:60px; height:34px; border-radius:4px; border:1px solid var(--border); overflow:hidden; position:relative;
+    flex-shrink:0; cursor:pointer; transition:all .2s;
+  }
+  .trans-preview:hover { border-color:var(--accent); }
+  /* Preview layers */
+  .tp-a, .tp-b { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.55em; }
+  .tp-a { background:linear-gradient(135deg,#2d1b69,#6c5ce7); color:#fff; z-index:1; }
+  .tp-b { background:linear-gradient(135deg,#1b5e20,#2ecc71); color:#fff; z-index:0; }
+  /* Preview animations by type */
+  .trans-preview[data-preview="fade"]:hover .tp-a { animation:prevFade 1s ease-in-out infinite; }
+  .trans-preview[data-preview="fadeblack"]:hover .tp-a { animation:prevFadeBlack 1s ease-in-out infinite; }
+  .trans-preview[data-preview="fadewhite"]:hover .tp-a { animation:prevFadeWhite 1s ease-in-out infinite; }
+  .trans-preview[data-preview="wipeleft"]:hover .tp-a { animation:prevWipeLeft 1s ease-in-out infinite; }
+  .trans-preview[data-preview="wiperight"]:hover .tp-a { animation:prevWipeRight 1s ease-in-out infinite; }
+  .trans-preview[data-preview="wipeup"]:hover .tp-a { animation:prevWipeUp 1s ease-in-out infinite; }
+  .trans-preview[data-preview="wipedown"]:hover .tp-a { animation:prevWipeDown 1s ease-in-out infinite; }
+  .trans-preview[data-preview="zoomin"]:hover .tp-a { animation:prevZoomIn 1s ease-in-out infinite; }
+  @keyframes prevFade { 0%,100%{opacity:1} 50%{opacity:0} }
+  @keyframes prevFadeBlack { 0%,40%{opacity:1} 50%,60%{opacity:0;background:#000} 100%{opacity:1} }
+  @keyframes prevFadeWhite { 0%,40%{opacity:1} 50%,60%{opacity:0;background:#fff} 100%{opacity:1} }
+  @keyframes prevWipeLeft { 0%,40%{clip-path:inset(0 0 0 0)} 60%,100%{clip-path:inset(0 100% 0 0)} }
+  @keyframes prevWipeRight { 0%,40%{clip-path:inset(0 0 0 0)} 60%,100%{clip-path:inset(0 0 0 100%)} }
+  @keyframes prevWipeUp { 0%,40%{clip-path:inset(0 0 0 0)} 60%,100%{clip-path:inset(0 0 100% 0)} }
+  @keyframes prevWipeDown { 0%,40%{clip-path:inset(0 0 0 0)} 60%,100%{clip-path:inset(100% 0 0 0)} }
+  @keyframes prevZoomIn { 0%,40%{transform:scale(1);opacity:1} 60%,100%{transform:scale(1.8);opacity:0} }
 
   /* Editor */
   .editor { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); margin-bottom:10px; display:none; overflow:hidden; }
@@ -131,16 +185,6 @@
   .pos-cell { background:var(--bg); border:1px solid var(--border); border-radius:4px; aspect-ratio:1; cursor:pointer; transition:all .2s; font-size:.55em; color:var(--dim); display:flex; align-items:center; justify-content:center; }
   .pos-cell.active { border-color:var(--accent); background:#1a1a35; color:var(--accent-glow); }
 
-  /* Transition tab */
-  .trans-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:6px; }
-  .trans-item { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:8px; text-align:center; cursor:pointer; transition:all .2s; font-size:.78em; color:var(--dim); }
-  .trans-item:hover { border-color:var(--accent); }
-  .trans-item.active { border-color:var(--accent); color:var(--accent-glow); background:#1a1a35; }
-  .trans-icon { font-size:1.5em; display:block; margin-bottom:2px; }
-  .dur-slider { display:flex; align-items:center; gap:10px; margin-top:12px; }
-  .dur-slider label { font-size:.82em; color:var(--dim); white-space:nowrap; }
-  .dur-slider input[type="range"] { flex:1; accent-color:var(--accent); }
-
   /* Checkbox */
   .check-row { display:flex; align-items:center; gap:8px; padding:5px 0; font-size:.82em; }
   .check-row input[type="checkbox"] { accent-color:var(--accent); }
@@ -151,6 +195,7 @@
   .btn-primary:hover { background:#7c6ff7; }
   .btn-primary:disabled { background:var(--border); cursor:not-allowed; }
   .btn.show { display:block; }
+
   .progress-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:14px; margin:10px 0; display:none; text-align:center; }
   .progress-wrap.show { display:block; }
   .progress-bar { height:5px; background:var(--border); border-radius:3px; overflow:hidden; margin:8px 0; }
@@ -159,41 +204,89 @@
   .result { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:14px; margin:10px 0; display:none; text-align:center; }
   .result.show { display:block; }
   .result video { width:100%; border-radius:8px; margin-bottom:6px; }
-  .pay-section { background:var(--surface); border:1px solid var(--gold); border-radius:var(--r); padding:18px; margin:10px 0; display:none; text-align:center; }
-  .pay-section.show { display:block; }
-  .pay-section h3 { color:var(--gold); margin-bottom:4px; }
-  .pay-section .price { font-size:2em; font-weight:800; color:var(--gold); }
-  .unlock-row { display:flex; gap:6px; margin-top:12px; }
-  .unlock-row input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); padding:9px; font-size:.95em; text-align:center; letter-spacing:3px; }
-  .unlock-btn { background:var(--gold); color:#000; border:none; border-radius:8px; padding:9px 18px; font-weight:600; cursor:pointer; }
-  .unlock-btn:disabled { opacity:.5; cursor:not-allowed; }
   .btn-download { background:var(--success); display:none; }
   .btn-download:hover { background:#27ae60; }
   .btn-download.show { display:block; }
+
+  /* === Balance & Recharge === */
+  .balance-panel {
+    background:var(--surface); border:1px solid var(--gold); border-radius:var(--r); padding:18px; margin:10px 0; display:none; text-align:center;
+  }
+  .balance-panel.show { display:block; }
+  .balance-panel h3 { color:var(--gold); margin-bottom:10px; }
+  .recharge-opts { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:12px; }
+  .recharge-opt {
+    background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:10px 16px; cursor:pointer;
+    transition:all .2s; font-size:.85em; color:var(--dim);
+  }
+  .recharge-opt:hover, .recharge-opt.active { border-color:var(--gold); color:var(--gold); }
+  .qr-box {
+    width:150px; height:150px; background:var(--bg); border:1px solid var(--border); border-radius:10px;
+    display:flex; align-items:center; justify-content:center; color:var(--dim); font-size:.72em; margin:8px auto;
+  }
+  .manual-unlock-row { display:flex; gap:8px; margin-top:10px; max-width:300px; margin-left:auto; margin-right:auto; }
+  .manual-unlock-row input {
+    flex:1; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text);
+    padding:9px; font-size:.9em; text-align:center; letter-spacing:3px;
+  }
+  .manual-unlock-row button {
+    background:var(--gold); color:#000; border:none; border-radius:8px; padding:9px 16px; font-weight:600; cursor:pointer;
+  }
+
+  /* Fee notice */
+  .fee-notice { display:none; background:var(--card-bg); border:1px solid var(--accent); border-radius:10px; padding:10px 14px; margin-bottom:10px; font-size:.82em; text-align:center; }
+  .fee-notice.show { display:block; }
+  .fee-notice .price { color:var(--gold); font-weight:700; font-size:1.1em; }
+
   footer { text-align:center; padding:28px 14px; color:var(--dim); font-size:.78em; }
   .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:9px 20px; font-size:.88em; z-index:999; opacity:0; transition:opacity .3s; pointer-events:none; }
   .toast.show { opacity:1; }
 
+  /* === Modal === */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; display:none; align-items:center; justify-content:center; }
+  .modal-overlay.show { display:flex; }
+  .modal {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:24px;
+    width:90%; max-width:380px; text-align:center;
+  }
+  .modal h3 { margin-bottom:12px; color:var(--gold); }
+  .modal .close-btn { margin-top:14px; background:var(--border); color:var(--text); border:none; border-radius:8px; padding:8px 20px; cursor:pointer; }
+
   @media(max-width:600px) {
     .hero h1 { font-size:1.4em; }
+    .features { grid-template-columns:repeat(2,1fr); }
     .tab { padding:9px 10px; font-size:.75em; }
     .filter-grid { grid-template-columns:repeat(3,1fr); }
-    .trans-grid { grid-template-columns:repeat(3,1fr); }
   }
 </style>
 </head>
 <body>
-<div class="hero">
-  <h1>🎬 AI 智能视频剪辑 v3.1</h1>
-  <p>单段/多段剪辑 · AI自动去空白 · 8种转场 · 滤镜特效 · 变速 · 字幕音乐<br>浏览器本地处理 · 不上传服务器</p>
-  <div class="badges">
-    <div class="badge">✂️ <span>AI剪辑</span></div>
-    <div class="badge">🎬 <span>多段转场</span></div>
-    <div class="badge">🎨 <span>滤镜</span></div>
-    <div class="badge">📝 <span>字幕</span></div>
-    <div class="badge">💰 <span>¥9.9</span></div>
+
+<!-- Nav -->
+<div class="nav-bar">
+  <div class="balance-display" id="balanceDisplay" title="点击充值">
+    💰 余额：<span class="bal-amount" id="balAmount">¥0.00</span>
   </div>
+  <button class="btn-sm" id="rechargeBtn">+ 充值</button>
 </div>
+
+<!-- Hero -->
+<div class="hero">
+  <h1>🎬 AI 智能视频剪辑 v4.0</h1>
+  <p class="subtitle">
+    上传视频，<strong>AI自动剪辑</strong> · <strong>独立转场</strong> · <strong>滤镜特效</strong> · <strong>字幕音乐</strong><br>全程在浏览器本地完成，视频不上传服务器，隐私安全
+  </p>
+</div>
+
+<!-- Feature Cards -->
+<div class="features">
+  <div class="feat-card"><div class="fc-icon">✂️</div><div class="fc-title">AI 智能剪辑</div><div class="fc-desc">自动检测并剪掉静音空白片段，对口播视频效果炸裂</div></div>
+  <div class="feat-card"><div class="fc-icon">🎬</div><div class="fc-title">独立转场</div><div class="fc-desc">每个片段对可自由选择转场效果，淡入淡出/擦除/缩放，悬停预览</div></div>
+  <div class="feat-card"><div class="fc-icon">🎨</div><div class="fc-title">8种滤镜</div><div class="fc-desc">暖调/冷调/复古/黑白/鲜艳/褪色/电影，一键切换风格</div></div>
+  <div class="feat-card"><div class="fc-icon">📝</div><div class="fc-title">自动字幕</div><div class="fc-desc">粘贴文本自动按时间轴生成字幕，支持文字水印</div></div>
+  <div class="feat-card"><div class="fc-icon">🎵</div><div class="fc-title">背景音乐</div><div class="fc-desc">上传MP3，调节音量，混音保留原声</div></div>
+</div>
+
 <div class="container">
   <!-- Mode -->
   <div class="mode-toggle" id="modeToggle">
@@ -218,11 +311,13 @@
   <!-- Multi clip list -->
   <div class="clip-list" id="clipList"></div>
 
+  <!-- Fee notice -->
+  <div class="fee-notice" id="feeNotice">💰 本次处理消耗 <span class="price">¥5.00</span> · 当前余额 <span class="price" id="feeBalance">¥0.00</span></div>
+
   <!-- Editor -->
   <div class="editor" id="editor">
     <div class="tabs">
       <div class="tab active" data-tab="trim">✂️ 裁剪</div>
-      <div class="tab" data-tab="trans">🎬 转场</div>
       <div class="tab" data-tab="filter">🎨 滤镜</div>
       <div class="tab" data-tab="speed">⚡ 变速</div>
       <div class="tab" data-tab="ratio">📱 比例</div>
@@ -236,26 +331,6 @@
       <div class="trim-row"><label>结束</label><input type="range" id="trimEnd" min="0" max="100" value="100" step="0.1"><span class="time-val" id="trimEndVal">00:00</span></div>
       <div class="check-row"><input type="checkbox" id="autoCut" checked><label>🤖 AI自动去空白</label></div>
       <div class="check-row" id="cutSettings" style="padding-left:16px;display:none;"><span style="color:var(--dim);font-size:.78em;">灵敏度：</span><select id="cutSensitivity" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:3px 6px;font-size:.78em;"><option value="aggressive">激进</option><option value="normal" selected>标准</option><option value="gentle">保守</option></select></div>
-    </div>
-
-    <!-- Transition -->
-    <div class="tab-content" id="tab-trans">
-      <p style="font-size:.78em;color:var(--dim);margin-bottom:10px;">选择转场效果（多段混剪时生效）</p>
-      <div class="trans-grid" id="transGrid">
-        <div class="trans-item active" data-trans="fade"><span class="trans-icon">🌑</span>淡入淡出</div>
-        <div class="trans-item" data-trans="fadeblack"><span class="trans-icon">⬛</span>黑场过渡</div>
-        <div class="trans-item" data-trans="fadewhite"><span class="trans-icon">⬜</span>白场过渡</div>
-        <div class="trans-item" data-trans="wipeleft"><span class="trans-icon">◀</span>左擦除</div>
-        <div class="trans-item" data-trans="wiperight"><span class="trans-icon">▶</span>右擦除</div>
-        <div class="trans-item" data-trans="wipeup"><span class="trans-icon">▲</span>上擦除</div>
-        <div class="trans-item" data-trans="wipedown"><span class="trans-icon">▼</span>下擦除</div>
-        <div class="trans-item" data-trans="zoomin"><span class="trans-icon">🔍</span>缩放</div>
-      </div>
-      <div class="dur-slider">
-        <label>转场时长</label>
-        <input type="range" id="transDuration" min="100" max="2000" value="500" step="50">
-        <span style="font-size:.78em;color:var(--gold);min-width:40px;" id="transDurVal">0.5秒</span>
-      </div>
     </div>
 
     <!-- Filter -->
@@ -314,29 +389,146 @@
     </div>
   </div>
 
-  <div class="check-row" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin-bottom:10px;display:none;" id="settingsRow">
-    <input type="checkbox" id="addWatermark" checked><label>预览版加水印（付费可去）</label>
+  <div class="check-row" id="settingsRow" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin-bottom:10px;display:none;">
+    <input type="checkbox" id="addWatermark" checked><label>预览版加水印</label>
   </div>
 
-  <button class="btn btn-primary show" id="processBtn" disabled>🚀 开始 AI 处理</button>
+  <button class="btn btn-primary show" id="processBtn" disabled>🚀 开始 AI 处理（¥5.00）</button>
   <div class="progress-wrap" id="progressWrap"><div class="progress-text" id="progressText">加载引擎...</div><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div></div>
-  <div class="result" id="resultPanel"><video id="previewVideo" controls></video><p style="color:var(--dim);font-size:.78em;">⬆ 预览含水印 · 付费解锁无水印</p></div>
-  <div class="pay-section" id="paySection"><h3>🔓 解锁无水印</h3><div class="price">¥9.9</div><p style="color:var(--dim);font-size:.82em;">扫码支付后联系客服获取解锁码</p><div style="background:var(--bg);border-radius:10px;padding:16px;display:inline-block;margin:6px 0;"><div style="width:130px;height:130px;background:var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:.72em;">[ 收款码 ]</div></div><div class="unlock-row"><input type="text" id="unlockInput" placeholder="6位解锁码" maxlength="6"><button class="unlock-btn" id="unlockBtn" disabled>解锁</button></div></div>
-  <button class="btn btn-download" id="downloadBtn">⬇ 下载无水印视频</button>
+  <div class="result" id="resultPanel"><video id="previewVideo" controls></video></div>
+
+  <!-- Balance Panel -->
+  <div class="balance-panel" id="balancePanel">
+    <h3>💰 账户充值</h3>
+    <p style="font-size:.82em;color:var(--dim);margin-bottom:10px;">最低充值 ¥10 · 每次处理消耗 ¥5</p>
+    <div class="recharge-opts" id="rechargeOpts">
+      <div class="recharge-opt active" data-amount="10">¥10</div>
+      <div class="recharge-opt" data-amount="20">¥20</div>
+      <div class="recharge-opt" data-amount="50">¥50</div>
+      <div class="recharge-opt" data-amount="100">¥100</div>
+    </div>
+    <div class="qr-box" id="qrBox">[ 收款码 ]<br>扫码支付</div>
+    <p style="font-size:.72em;color:var(--dim);margin:4px 0;">支付完成后联系客服获取解锁码</p>
+    <div class="manual-unlock-row">
+      <input type="text" id="unlockInput" placeholder="6位解锁码" maxlength="6">
+      <button id="unlockBtn">确认充值</button>
+    </div>
+    <p style="font-size:.68em;color:var(--dim);margin-top:8px;" id="payjsNote">* 即将接入 PayJS 自动支付</p>
+  </div>
+
+  <button class="btn btn-download" id="downloadBtn">⬇ 下载视频</button>
 </div>
-<footer>本地处理 · 视频不上传 · FFmpeg.wasm · 支持多段转场</footer>
+<footer>本地处理 · 视频不上传 · FFmpeg.wasm · 独立转场 · 余额系统 · v4.0</footer>
 <div class="toast" id="toast"></div>
+
+<!-- Recharge Modal -->
+<div class="modal-overlay" id="rechargeModal">
+  <div class="modal">
+    <h3>💰 充值</h3>
+    <p style="font-size:.85em;color:var(--dim);">当前余额：<span style="color:var(--gold);font-weight:700;" id="modalBal">¥0.00</span></p>
+    <div class="recharge-opts" id="modalRechargeOpts" style="margin:12px 0;">
+      <div class="recharge-opt active" data-amount="10">¥10</div>
+      <div class="recharge-opt" data-amount="20">¥20</div>
+      <div class="recharge-opt" data-amount="50">¥50</div>
+      <div class="recharge-opt" data-amount="100">¥100</div>
+    </div>
+    <button class="btn-primary" style="display:block;width:100%;" id="modalRechargeBtn">确认充值 ¥10</button>
+    <button class="close-btn" id="modalClose">取消</button>
+  </div>
+</div>
 
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-let videoFile=null,videoData=null,processedBlob=null,isUnlocked=false;
+const TRANS_NAMES={fade:'淡入淡出',fadeblack:'黑场过渡',fadewhite:'白场过渡',wipeleft:'左擦除',wiperight:'右擦除',wipeup:'上擦除',wipedown:'下擦除',zoomin:'缩放'};
+const PRICE_PER_PROCESS=5;
+const TRANS_OPTIONS=`<option value="fade">淡入淡出</option><option value="fadeblack">黑场过渡</option><option value="fadewhite">白场过渡</option><option value="wipeleft">左擦除</option><option value="wiperight">右擦除</option><option value="wipeup">上擦除</option><option value="wipedown">下擦除</option><option value="zoomin">缩放</option>`;
+
+let videoFile=null,videoData=null,processedBlob=null;
 let ffmpeg=null,ffmpegReady=false,videoDuration=0;
 let musicFile=null,musicData=null;
 let currentFilter='none',currentSpeed=1,currentRatio='original';
 let overlayTextVal='',overlayPosVal='top-left';
-let currentMode='single',currentTrans='fade',transDuration=500;
-let multiClips=[]; // {file, data, duration}
+let currentMode='single',transDuration=500;
+let multiClips=[]; // {file, data, duration, trans:'fade'}
+let selectedRecharge=10;
+
+// === Balance System ===
+function getBalance(){ return parseFloat(localStorage.getItem('av_balance')||'0'); }
+function setBalance(v){ localStorage.setItem('av_balance',v.toFixed(2)); updateBalanceUI(); }
+function updateBalanceUI(){
+  const b=getBalance();
+  $('balAmount').textContent='¥'+b.toFixed(2);
+  $('feeBalance').textContent='¥'+b.toFixed(2);
+  $('modalBal').textContent='¥'+b.toFixed(2);
+  if(currentMode==='multi'&&multiClipped()) updateFeeNotice();
+}
+function deductBalance(amt){
+  const b=getBalance(); if(b<amt) return false;
+  setBalance(b-amt); return true;
+}
+function multiClipped(){ return currentMode==='multi'&&multiClips.length>=2; }
+
+function updateFeeNotice(){
+  if(!multiClipped()){
+    $('feeNotice').classList.remove('show');
+    $('processBtn').textContent='🚀 开始 AI 处理';
+    return;
+  }
+  $('feeNotice').classList.add('show');
+  $('processBtn').textContent='🚀 开始 AI 处理（¥'+PRICE_PER_PROCESS+'.00）';
+  updateBalanceUI();
+}
+
+// Recharge modal
+$('rechargeBtn').addEventListener('click',()=>{
+  $('rechargeModal').classList.add('show'); updateBalanceUI();
+});
+$('balanceDisplay').addEventListener('click',()=>{
+  $('rechargeModal').classList.add('show'); updateBalanceUI();
+});
+$('modalClose').addEventListener('click',()=>$('rechargeModal').classList.remove('show'));
+$('rechargeModal').addEventListener('click',e=>{if(e.target===$('rechargeModal'))$('rechargeModal').classList.remove('show');});
+
+document.querySelectorAll('#modalRechargeOpts .recharge-opt').forEach(o=>{
+  o.addEventListener('click',()=>{
+    document.querySelectorAll('#modalRechargeOpts .recharge-opt').forEach(x=>x.classList.remove('active'));
+    o.classList.add('active'); selectedRecharge=parseInt(o.dataset.amount);
+    $('modalRechargeBtn').textContent='确认充值 ¥'+selectedRecharge;
+  });
+});
+
+$('modalRechargeBtn').addEventListener('click',()=>{
+  const b=getBalance();
+  setBalance(b+selectedRecharge);
+  showToast('✅ 已充值 ¥'+selectedRecharge+'，当前余额 ¥'+getBalance().toFixed(2));
+  $('rechargeModal').classList.remove('show');
+  updateFeeNotice();
+});
+
+// Recharge panel in page
+document.querySelectorAll('#rechargeOpts .recharge-opt').forEach(o=>{
+  o.addEventListener('click',()=>{
+    document.querySelectorAll('#rechargeOpts .recharge-opt').forEach(x=>x.classList.remove('active'));
+    o.classList.add('active');
+  });
+});
+
+// Unlock code in balance panel
+$('unlockInput').addEventListener('input',()=>{
+  $('unlockBtn').style.opacity=$('unlockInput').value.length>=4?'1':'0.5';
+});
+$('unlockBtn').addEventListener('click',()=>{
+  const code=$('unlockInput').value;
+  if(code.length>=4){
+    const amt=document.querySelector('#rechargeOpts .recharge-opt.active')?.dataset?.amount||10;
+    const b=getBalance();
+    setBalance(b+parseInt(amt));
+    showToast('✅ 解锁码验证通过，已充值 ¥'+amt);
+    $('unlockInput').value='';$('balancePanel').classList.remove('show');
+    updateFeeNotice();
+  }
+});
 
 function showToast(m){$('toast').textContent=m;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2500);}
 
@@ -375,20 +567,21 @@ async function handleFiles(e){
   if(currentMode==='single'){
     const f=files[0];
     if(f.size>500*1024*1024){showToast('⚠️ 文件不超过500MB');return;}
-    videoFile=f;videoData=null;processedBlob=null;isUnlocked=false;
+    videoFile=f;videoData=null;processedBlob=null;
     $('fileName').textContent=f.name;$('fileSize').textContent=(f.size/1024/1024).toFixed(1)+' MB';
     $('fileCard').classList.add('show');$('clipList').classList.remove('show');
     videoDuration=await getDuration(f);
     $('trimEnd').max=videoDuration;$('trimEnd').value=videoDuration;$('trimEndVal').textContent=fmtTime(videoDuration);
     $('trimStart').max=videoDuration;$('trimStart').value=0;$('trimStartVal').textContent='00:00';
+    $('feeNotice').classList.remove('show');
     showEditor();
   }else{
     for(const f of files){
       if(f.size>500*1024*1024){showToast('⚠️ 单个文件不超过500MB');continue;}
       const dur=await getDuration(f);
-      multiClips.push({file:f,data:null,duration:dur});
+      multiClips.push({file:f,data:null,duration:dur,trans:'fade'});
     }
-    if(multiClips.length){renderClipList();showEditor();}
+    if(multiClips.length){renderClipList();showEditor();updateFeeNotice();}
   }
 }
 
@@ -401,42 +594,63 @@ function renderClipList(){
       <div class="clip-num">${i+1}</div>
       <div class="clip-name" title="${c.file.name}">${c.file.name}</div>
       <div class="clip-dur">${fmtTime(c.duration)}</div>
-      <button class="clip-del" data-idx="${i}">✕</button>
-      <span class="clip-arrow">↓</span>`;
-    div.querySelector('.clip-del').addEventListener('click',()=>{multiClips.splice(i,1);renderClipList();if(!multiClips.length)resetAll();});
+      <button class="clip-del" data-idx="${i}">✕</button>`;
+    div.querySelector('.clip-del').addEventListener('click',()=>{
+      multiClips.splice(i,1);renderClipList();
+      if(!multiClips.length)resetAll();else updateFeeNotice();
+    });
     list.appendChild(div);
-    // Transition row between clips
+
+    // Per-clip transition row
     if(i<multiClips.length-1){
-      const tr=document.createElement('div');tr.className='transition-row';
-      tr.innerHTML=`↳ 转场: <strong>${getTransName(currentTrans)}</strong> · ${(transDuration/1000).toFixed(1)}秒`;
+      const tr=document.createElement('div');tr.className='clip-trans-row';
+      tr.innerHTML=`
+        ↳ 转场：
+        <select class="trans-select" data-idx="${i}">${TRANS_OPTIONS}</select>
+        <div class="trans-preview" data-preview="${c.trans||'fade'}">
+          <div class="tp-a">A</div><div class="tp-b">B</div>
+        </div>
+        <span style="font-size:.7em;color:var(--dim);">${(transDuration/1000).toFixed(1)}秒</span>`;
+      const sel=tr.querySelector('select');
+      sel.value=c.trans||'fade';
+      sel.addEventListener('change',()=>{
+        multiClips[i].trans=sel.value;
+        tr.querySelector('.trans-preview').setAttribute('data-preview',sel.value);
+      });
+      // Click preview to cycle through transitions
+      tr.querySelector('.trans-preview').addEventListener('click',()=>{
+        const keys=Object.keys(TRANS_NAMES);
+        const idx=keys.indexOf(multiClips[i].trans);
+        const next=keys[(idx+1)%keys.length];
+        multiClips[i].trans=next;
+        sel.value=next;
+        tr.querySelector('.trans-preview').setAttribute('data-preview',next);
+      });
       list.appendChild(tr);
     }
   });
   $('clipList').classList.add('show');$('fileCard').classList.remove('show');
-  // Update trim range to total
   videoDuration=multiClips.reduce((s,c)=>s+c.duration,0);
   $('trimEnd').max=videoDuration;$('trimEnd').value=videoDuration;$('trimEndVal').textContent=fmtTime(videoDuration);
   $('trimStart').max=videoDuration;$('trimStart').value=0;
 }
 
-function getTransName(t){const m={fade:'淡入淡出',fadeblack:'黑场',fadewhite:'白场',wipeleft:'左擦除',wiperight:'右擦除',wipeup:'上擦除',wipedown:'下擦除',zoomin:'缩放'};return m[t]||t;}
-
 function showEditor(){
   $('editor').classList.add('show');$('settingsRow').style.display='flex';
   $('processBtn').classList.add('show');$('processBtn').disabled=false;
-  $('resultPanel').classList.remove('show');$('paySection').classList.remove('show');
+  $('resultPanel').classList.remove('show');$('balancePanel').classList.remove('show');
   $('downloadBtn').classList.remove('show');$('progressWrap').classList.remove('show');
 }
 
 function resetAll(){
-  videoFile=null;videoData=null;processedBlob=null;isUnlocked=false;
+  videoFile=null;videoData=null;processedBlob=null;
   musicFile=null;musicData=null;multiClips=[];
   fileInput.value='';$('fileCard').classList.remove('show');$('clipList').classList.remove('show');
   $('editor').classList.remove('show');$('settingsRow').style.display='none';
   $('processBtn').classList.remove('show');$('processBtn').disabled=true;
-  $('resultPanel').classList.remove('show');$('paySection').classList.remove('show');
+  $('resultPanel').classList.remove('show');$('balancePanel').classList.remove('show');
   $('downloadBtn').classList.remove('show');$('progressWrap').classList.remove('show');
-  $('musicCard').classList.remove('show');
+  $('musicCard').classList.remove('show');$('feeNotice').classList.remove('show');
 }
 $('fileRemove').addEventListener('click',resetAll);
 
@@ -449,9 +663,8 @@ $('trimEnd').addEventListener('input',()=>{$('trimEndVal').textContent=fmtTime(p
 $('autoCut').addEventListener('change',()=>{$('cutSettings').style.display=$('autoCut').checked?'block':'none';});
 function fmtTime(s){const m=Math.floor(s/60),sec=Math.floor(s%60);return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');}
 
-// === Transition ===
-document.querySelectorAll('.trans-item').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.trans-item').forEach(x=>x.classList.remove('active'));t.classList.add('active');currentTrans=t.dataset.trans;if(currentMode==='multi')renderClipList();});});
-$('transDuration').addEventListener('input',()=>{transDuration=parseInt($('transDuration').value);$('transDurVal').textContent=(transDuration/1000).toFixed(1)+'秒';if(currentMode==='multi')renderClipList();});
+// === Transition tab removed (per-clip now) ===
+$('transDuration')?.addEventListener?.('input',()=>{transDuration=parseInt($('transDuration')?.value||500);});
 
 // === Filter ===
 document.querySelectorAll('.filter-item').forEach(f=>{f.addEventListener('click',()=>{document.querySelectorAll('.filter-item').forEach(x=>x.classList.remove('active'));f.classList.add('active');currentFilter=f.dataset.filter;});});
@@ -502,27 +715,40 @@ async function detectSilence(inputName){
 $('processBtn').addEventListener('click',async()=>{
   if(currentMode==='single'&&!videoFile)return;
   if(currentMode==='multi'&&!multiClips.length)return;
+
+  // Balance check for multi-clip
+  if(multiClipped()){
+    if(getBalance()<PRICE_PER_PROCESS){
+      showToast('❌ 余额不足，请先充值（最低¥10）');
+      $('balancePanel').classList.add('show');
+      return;
+    }
+  }
+
   $('processBtn').disabled=true;$('processBtn').textContent='⏳ 处理中...';
   $('progressWrap').classList.add('show');$('progressText').textContent='加载引擎...';$('progressFill').style.width='5%';
-  $('resultPanel').classList.remove('show');$('paySection').classList.remove('show');$('downloadBtn').classList.remove('show');
+  $('resultPanel').classList.remove('show');$('balancePanel').classList.remove('show');$('downloadBtn').classList.remove('show');
 
   try{
     await initFFmpeg();
 
     if(currentMode==='multi'&&multiClips.length>1){
       await processMultiClip();
+      deductBalance(PRICE_PER_PROCESS);
     }else{
       await processSingleClip();
     }
 
     $('progressFill').style.width='100%';$('progressText').textContent='✅ 完成！';
     if(processedBlob){
-      previewVideo.src=URL.createObjectURL(processedBlob);$('resultPanel').classList.add('show');$('paySection').classList.add('show');
+      $('previewVideo').src=URL.createObjectURL(processedBlob);$('resultPanel').classList.add('show');
+      $('downloadBtn').classList.add('show');
+      if(multiClipped()){showToast('✅ 处理完成！已消耗 ¥'+PRICE_PER_PROCESS+'，余额 ¥'+getBalance().toFixed(2));}
     }
     $('progressWrap').classList.remove('show');
 
   }catch(err){console.error(err);$('progressText').textContent='❌ 失败: '+err.message;$('progressFill').style.background='var(--danger)';showToast('❌ 处理失败');}
-  finally{$('processBtn').disabled=false;$('processBtn').textContent='🔄 重新处理';}
+  finally{$('processBtn').disabled=false;$('processBtn').textContent=multiClipped()?'🔄 重新处理（¥'+PRICE_PER_PROCESS+'.00）':'🔄 重新处理';}
 });
 
 async function processSingleClip(){
@@ -531,7 +757,6 @@ async function processSingleClip(){
   videoData=await new Promise((res,rej)=>{reader.onload=()=>res(new Uint8Array(reader.result));reader.onerror=rej;reader.readAsArrayBuffer(videoFile);});
   $('progressFill').style.width='15%';$('progressText').textContent='写入视频...';
   await ffmpeg.writeFile(inName,videoData);
-
   let fc=await buildSingleFilterChain(inName);
   const cmd=['-i',inName];
   if(fc){cmd.push('-filter_complex',fc.fc);cmd.push('-map',fc.v,'-map',fc.a);}
@@ -544,7 +769,6 @@ async function processSingleClip(){
 }
 
 async function processMultiClip(){
-  // Write all clips
   const names=[];
   for(let i=0;i<multiClips.length;i++){
     const clip=multiClips[i];
@@ -556,32 +780,27 @@ async function processMultiClip(){
     $('progressFill').style.width=(15+i*5)+'%';$('progressText').textContent=`写入素材 ${i+1}/${multiClips.length}...`;
   }
 
-  // Apply filters to each clip
   const vf=[];const cf=FILTER_MAP[currentFilter];
   for(let i=0;i<names.length;i++){
     let f='';if(currentSpeed!==1)f+=`setpts=${(1/currentSpeed).toFixed(3)}*PTS`;if(cf){if(f)f+=',';f+=cf;}vf.push(f||'null');
   }
-  // Also handle trim
-  const tStart=parseFloat($('trimStart').value)||0,tEnd=parseFloat($('trimEnd').value)||videoDuration;
 
-  // Build xfade chain
   let fc='';
-  // Prepare filtered streams
   for(let i=0;i<names.length;i++){
     fc+=`[${i}:v]${vf[i]},setpts=PTS-STARTPTS[fv${i}];[${i}:a]anull[fa${i}];`;
   }
 
-  // xfade chain
+  // xfade chain with per-clip transitions
   let lv=`[fv0]`,la=`[fa0]`;
   let off=multiClips[0].duration-transDuration/1000;
   for(let i=1;i<names.length;i++){
-    fc+=`${lv}[fv${i}]xfade=transition=${currentTrans}:duration=${transDuration/1000}:offset=${off.toFixed(2)}[xv${i}];`;
+    const trans=multiClips[i-1].trans||'fade';
+    fc+=`${lv}[fv${i}]xfade=transition=${trans}:duration=${transDuration/1000}:offset=${off.toFixed(2)}[xv${i}];`;
     fc+=`${la}[fa${i}]acrossfade=d=${transDuration/1000}[xa${i}];`;
     lv=`[xv${i}]`;la=`[xa${i}]`;
     off+=multiClips[i].duration-transDuration/1000;
   }
 
-  // Post-processing: ratio, overlay, subtitles, watermark
   let lastV=lv,lastA=la;let idx=0;
 
   if(currentRatio!=='original'){
@@ -610,7 +829,6 @@ async function buildSingleFilterChain(inName){
   const tStart=parseFloat($('trimStart').value)||0,tEnd=parseFloat($('trimEnd').value)||videoDuration;
   let fc='',lastV='0:v',lastA='0:a',idx=0;
 
-  // Auto-cut
   if($('autoCut').checked){
     const segs=await detectSilence(inName);
     if(segs&&segs.length>1){
@@ -622,27 +840,20 @@ async function buildSingleFilterChain(inName){
     }
   }
 
-  // Trim
   if(!fc&&(tStart>0||tEnd<videoDuration-.1)){const dur=tEnd-tStart;fc+=`[0:v]trim=start=${tStart}:duration=${dur},setpts=PTS-STARTPTS[v0];[0:a]atrim=start=${tStart}:duration=${dur},asetpts=PTS-STARTPTS[a0];`;lastV='[v0]';lastA='[a0]';idx=1;}
 
-  // Speed + Filter
   const vf=[];if(currentSpeed!==1)vf.push(`setpts=${(1/currentSpeed).toFixed(3)}*PTS`);const cf=FILTER_MAP[currentFilter];if(cf)vf.push(cf);
   if(vf.length){fc+=`${lastV}${vf.join(',')}[vf${idx}];`;lastV=`[vf${idx}]`;idx++;}
 
-  // Ratio
   if(currentRatio!=='original'){const r={ '9:16':[9,16],'1:1':[1,1],'16:9':[16,9]};const[wR,hR]=r[currentRatio];fc+=`${lastV}crop=min(iw\\,ih*${wR}/${hR}):min(ih\\,iw*${hR}/${wR}),scale=1080:1920,setsar=1[ratio${idx}];`;lastV=`[ratio${idx}]`;idx++;}
 
-  // Overlay
   if(overlayTextVal){const[x,y]=overlayXY(overlayPosVal);const txt=overlayTextVal.replace(/:/g,'\\:').replace(/'/g,"\\\\'");fc+=`${lastV}drawtext=text='${txt}':fontsize=28:fontcolor=white@0.8:x=${x}:y=${y}:bordercolor=black@0.4:borderw=2[txt${idx}];`;lastV=`[txt${idx}]`;idx++;}
 
-  // Subtitle
   const subText=$('subtitleText').value.trim();
   if(subText){const srt=generateSRT(subText);if(srt){await ffmpeg.writeFile('subs.srt',srt);fc+=`${lastV}subtitles=subs.srt:force_style='FontSize=20,FontName=PingFang SC,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2'[sub${idx}];`;lastV=`[sub${idx}]`;idx++;}}
 
-  // Audio speed
   if(currentSpeed!==1){fc+=`${lastA}atempo=${currentSpeed}[fa${idx}];`;lastA=`[fa${idx}]`;}
 
-  // Watermark
   if($('addWatermark').checked){fc+=`${lastV}drawtext=text='预览版':fontsize=22:fontcolor=white@0.35:x=w-tw-12:y=h-th-12[finalv];`;lastV='[finalv]';}
   else if(fc){fc+=`${lastV}copy[finalv];`;lastV='[finalv]';if(currentSpeed===1&&lastA==='0:a')fc+=`0:aacopy[finala];`;lastA=lastA==='0:a'?'[finala]':lastA;}
 
@@ -661,7 +872,6 @@ async function addMusicCmd(cmd,hasFC){
   const bgmVol=parseInt($('musicVolume').value)/100;
   if($('mixAudio').checked){
     cmd.push('-filter_complex',(hasFC?(cmd[cmd.indexOf('-filter_complex')+1]+';'):'')+`[1:a]volume=${bgmVol},[0:a]amix=inputs=2:duration=first[mixeda]`);
-    // Replace -map
   }
 }
 async function cleanFiles(...names){
@@ -672,11 +882,12 @@ async function cleanFiles(...names){
   for(const n of names)try{await ffmpeg.deleteFile(n);}catch(e){}
 }
 
-// === Unlock ===
-$('unlockInput').addEventListener('input',()=>{$('unlockBtn').disabled=$('unlockInput').value.length!==6;});
-$('unlockBtn').addEventListener('click',()=>{if($('unlockInput').value==='123456'){isUnlocked=true;$('paySection').classList.remove('show');$('downloadBtn').classList.add('show');$('downloadBtn').classList.add('btn-primary');showToast('🔓 解锁成功！');}else{showToast('❌ 解锁码错误');$('unlockInput').value='';$('unlockBtn').disabled=true;}});
+// === Download ===
 $('downloadBtn').addEventListener('click',()=>{if(!processedBlob)return;const url=URL.createObjectURL(processedBlob);const a=document.createElement('a');a.href=url;a.download='edited_'+Date.now()+'.mp4';a.click();URL.revokeObjectURL(url);showToast('✅ 下载开始！');});
-console.log('🎬 AI Video Editor v3.1 — 多段混剪+转场 ready');
+
+// Init
+updateBalanceUI();
+console.log('🎬 AI Video Editor v4.0 — 独立转场+余额系统 ready');
 </script>
 </body>
 </html>
